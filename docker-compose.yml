@@ -10,6 +10,7 @@ services:
     environment:
       - APP_PORT=8032
       - DATABASE_URL=sqlite:///data/lampung_monitor.db
+    user: "0:0"
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8032/health"]
