@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="id" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login — {{ app_name }}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: { extend: { colors: { primary: { 50:'#eff6ff',100:'#dbeafe',200:'#bfdbfe',300:'#93c5fd',400:'#60a5fa',500:'#3b82f6',600:'#2563eb',700:'#1d4ed8',800:'#1e40af',900:'#1e3a8a' } } } }
+        }
+    </script>
+</head>
+<body class="h-full bg-gradient-to-br from-primary-900 via-primary-800 to-gray-900">
+    <div class="flex min-h-full flex-col justify-center py-12 sm:px-6 lg:px-8">
+        <div class="sm:mx-auto sm:w-full sm:max-w-md">
+            <div class="text-center">
+                <span class="text-6xl">📡</span>
+                <h2 class="mt-4 text-3xl font-bold tracking-tight text-white">{{ app_name }}</h2>
+                <p class="mt-2 text-sm text-primary-200">Balai Monitor Spektrum Frekuensi Radio Kelas II Lampung</p>
+                <p class="mt-1 text-xs text-primary-300">Tim Kualitas Layanan Infrastruktur Digital</p>
+            </div>
+        </div>
+
+        <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+            <div class="bg-white/10 backdrop-blur-lg py-8 px-6 shadow-2xl rounded-2xl border border-white/20">
+                <form id="loginForm" class="space-y-6">
+                    <div>
+                        <label for="username" class="block text-sm font-medium text-white">Username</label>
+                        <div class="mt-1">
+                            <input id="username" name="username" type="text" required autocomplete="username"
+                                class="block w-full rounded-lg border-0 bg-white/10 py-3 px-4 text-white placeholder:text-gray-400 focus:ring-2 focus:ring-primary-400 focus:bg-white/20 sm:text-sm"
+                                placeholder="Masukkan username">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="password" class="block text-sm font-medium text-white">Password</label>
+                        <div class="mt-1">
+                            <input id="password" name="password" type="password" required autocomplete="current-password"
+                                class="block w-full rounded-lg border-0 bg-white/10 py-3 px-4 text-white placeholder:text-gray-400 focus:ring-2 focus:ring-primary-400 focus:bg-white/20 sm:text-sm"
+                                placeholder="Masukkan password">
+                        </div>
+                    </div>
+
+                    <div id="errorMsg" class="hidden rounded-lg bg-red-500/20 border border-red-400/30 p-3">
+                        <p class="text-sm text-red-200" id="errorText"></p>
+                    </div>
+
+                    <div>
+                        <button type="submit" id="loginBtn"
+                            class="flex w-full justify-center rounded-lg bg-primary-500 py-3 px-4 text-sm font-semibold text-white shadow-lg hover:bg-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-400 focus:ring-offset-2 focus:ring-offset-primary-900 transition-all duration-200 disabled:opacity-50">
+                            Masuk
+                        </button>
+                    </div>
+                </form>
+
+                <div class="mt-6 text-center">
+                    <p class="text-xs text-primary-300/60">🔒 Akses terbatas — hubungi admin untuk akun baru</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Check if already logged in
+        const token = localStorage.getItem('access_token');
+        if (token) {
+            window.location.href = '/dashboard';
+        }
+
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('loginBtn');
+            const errDiv = document.getElementById('errorMsg');
+            const errText = document.getElementById('errorText');
+
+            btn.disabled = true;
+            btn.textContent = 'Memproses...';
+            errDiv.classList.add('hidden');
+
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                const formData = new URLSearchParams();
+                formData.append('username', username);
+                formData.append('password', password);
+
+                const resp = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: formData,
+                });
+
+                const data = await resp.json();
+
+                if (!resp.ok) {
+                    throw new Error(data.detail || 'Login gagal');
+                }
+
+                localStorage.setItem('access_token', data.access_token);
+                localStorage.setItem('user', JSON.stringify(data.user));
+                window.location.href = '/dashboard';
+
+            } catch (err) {
+                errText.textContent = err.message;
+                errDiv.classList.remove('hidden');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Masuk';
+            }
+        });
+    </script>
+</body>
+</html>

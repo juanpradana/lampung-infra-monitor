@@ -1,0 +1,239 @@
+{% extends "base.html" %}
+
+{% block title %}Admin — {{ app_name }}{% endblock %}
+
+{% block content %}
+<!-- Tabs -->
+<div class="flex gap-2 mb-6">
+    <button onclick="showTab('users')" id="tab-users" class="tab-btn active bg-primary-600 text-white px-4 py-2 rounded-lg text-sm font-medium">👥 Pengguna</button>
+    <button onclick="showTab('monitoring')" id="tab-monitoring" class="tab-btn bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium">🤖 Monitoring</button>
+    <button onclick="showTab('telegram')" id="tab-telegram" class="tab-btn bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium">📱 Telegram</button>
+</div>
+
+<!-- Users Tab -->
+<div id="panel-users" class="tab-panel">
+    <div class="bg-white rounded-xl shadow-sm border">
+        <div class="p-5 border-b flex items-center justify-between">
+            <h3 class="text-lg font-semibold text-gray-800">👥 Manajemen Pengguna</h3>
+            <button onclick="showAddUserModal()" class="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg text-sm font-medium">+ Tambah User</button>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Username</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nama</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="usersTable" class="divide-y divide-gray-200">
+                    <tr><td colspan="6" class="px-4 py-8 text-center text-gray-400">Memuat...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Monitoring Tab -->
+<div id="panel-monitoring" class="tab-panel hidden">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="bg-white rounded-xl shadow-sm border p-5">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">🔄 Trigger Manual</h3>
+            <p class="text-sm text-gray-500 mb-4">Jalankan monitoring secara manual tanpa menunggu interval.</p>
+            <div class="space-y-3">
+                <button onclick="triggerJob('bmkg')" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg text-sm">🌍 Cek BMKG (Gempa/Cuaca)</button>
+                <button onclick="triggerJob('news')" class="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg text-sm">📰 Cek Berita</button>
+                <button onclick="triggerJob('summary')" class="w-full bg-purple-600 hover:bg-purple-700 text-white py-2 rounded-lg text-sm">📊 Kirim Summary Harian</button>
+                <button onclick="triggerJob('all')" class="w-full bg-gray-800 hover:bg-gray-900 text-white py-2 rounded-lg text-sm">🚀 Jalankan Semua</button>
+            </div>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm border p-5">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">📋 Log Monitoring</h3>
+            <div id="adminMonitorLogs" class="space-y-2">
+                <p class="text-gray-400 text-sm">Memuat...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Telegram Tab -->
+<div id="panel-telegram" class="tab-panel hidden">
+    <div class="bg-white rounded-xl shadow-sm border p-5">
+        <h3 class="text-lg font-semibold text-gray-800 mb-4">📱 Test Notifikasi Telegram</h3>
+        <p class="text-sm text-gray-500 mb-4">Kirim pesan test ke bot Telegram untuk memverifikasi konfigurasi.</p>
+        <div class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Pesan</label>
+                <textarea id="testMessage" rows="3" class="w-full rounded-lg border-gray-300 text-sm">🔔 Test notifikasi dari Lampung Infrastructure Monitor</textarea>
+            </div>
+            <button onclick="testTelegram()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg text-sm font-medium">📤 Kirim Test</button>
+            <div id="telegramResult" class="hidden rounded-lg p-3 text-sm"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Add User Modal -->
+<div id="addUserModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50">
+    <div class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md mx-4">
+        <h3 class="text-lg font-semibold mb-4">Tambah Pengguna Baru</h3>
+        <form id="addUserForm" class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                <input type="text" id="newUsername" required class="w-full rounded-lg border-gray-300 text-sm">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                <input type="password" id="newPassword" required class="w-full rounded-lg border-gray-300 text-sm">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Nama Lengkap</label>
+                <input type="text" id="newFullName" class="w-full rounded-lg border-gray-300 text-sm">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <input type="email" id="newEmail" class="w-full rounded-lg border-gray-300 text-sm">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                <select id="newRole" class="w-full rounded-lg border-gray-300 text-sm">
+                    <option value="viewer">Viewer (Dashboard saja)</option>
+                    <option value="operator">Operator (Input & edit data)</option>
+                    <option value="superadmin">Superadmin (Full akses)</option>
+                </select>
+            </div>
+            <div class="flex gap-3 pt-2">
+                <button type="button" onclick="closeAddUserModal()" class="flex-1 bg-gray-200 text-gray-700 py-2 rounded-lg text-sm">Batal</button>
+                <button type="submit" class="flex-1 bg-primary-600 text-white py-2 rounded-lg text-sm">Simpan</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function showTab(tab) {
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'));
+    document.querySelectorAll('.tab-btn').forEach(b => {
+        b.classList.remove('bg-primary-600', 'text-white');
+        b.classList.add('bg-gray-200', 'text-gray-700');
+    });
+    document.getElementById(`panel-${tab}`).classList.remove('hidden');
+    const btn = document.getElementById(`tab-${tab}`);
+    btn.classList.add('bg-primary-600', 'text-white');
+    btn.classList.remove('bg-gray-200', 'text-gray-700');
+}
+
+async function loadUsers() {
+    try {
+        const data = await apiGet('/api/admin/users');
+        const users = data.users || [];
+        const tbody = document.getElementById('usersTable');
+        tbody.innerHTML = users.map(u => `
+            <tr class="hover:bg-gray-50">
+                <td class="px-4 py-3 text-sm font-medium">${u.username}</td>
+                <td class="px-4 py-3 text-sm text-gray-600">${u.full_name || '-'}</td>
+                <td class="px-4 py-3 text-sm text-gray-600">${u.email || '-'}</td>
+                <td class="px-4 py-3"><span class="text-xs px-2 py-1 rounded-full ${u.role === 'superadmin' ? 'bg-red-100 text-red-700' : u.role === 'operator' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'}">${u.role}</span></td>
+                <td class="px-4 py-3"><span class="text-xs px-2 py-1 rounded-full ${u.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}">${u.is_active ? 'Aktif' : 'Nonaktif'}</span></td>
+                <td class="px-4 py-3 text-sm">
+                    <button onclick="toggleUser(${u.id}, ${!u.is_active})" class="text-xs ${u.is_active ? 'text-red-600' : 'text-green-600'} hover:underline">${u.is_active ? 'Nonaktifkan' : 'Aktifkan'}</button>
+                </td>
+            </tr>
+        `).join('');
+    } catch (err) {
+        console.error('Users error:', err);
+    }
+}
+
+async function toggleUser(userId, activate) {
+    try {
+        await apiPut(`/api/admin/users/${userId}`, { is_active: activate });
+        loadUsers();
+    } catch (err) {
+        alert('Error: ' + err.message);
+    }
+}
+
+function showAddUserModal() {
+    document.getElementById('addUserModal').classList.remove('hidden');
+    document.getElementById('addUserModal').classList.add('flex');
+}
+
+function closeAddUserModal() {
+    document.getElementById('addUserModal').classList.add('hidden');
+    document.getElementById('addUserModal').classList.remove('flex');
+}
+
+document.getElementById('addUserForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    try {
+        await apiPost('/api/auth/register', {
+            username: document.getElementById('newUsername').value,
+            password: document.getElementById('newPassword').value,
+            full_name: document.getElementById('newFullName').value,
+            email: document.getElementById('newEmail').value,
+            role: document.getElementById('newRole').value,
+        });
+        closeAddUserModal();
+        loadUsers();
+        e.target.reset();
+    } catch (err) {
+        alert('Error: ' + err.message);
+    }
+});
+
+async function triggerJob(job) {
+    try {
+        const data = await apiPost(`/api/admin/monitoring/trigger?job=${job}`, {});
+        alert('✅ ' + JSON.stringify(data.jobs));
+        loadMonitorLogsAdmin();
+    } catch (err) {
+        alert('❌ ' + err.message);
+    }
+}
+
+async function loadMonitorLogsAdmin() {
+    try {
+        const data = await apiGet('/api/dashboard/monitoring-logs?limit=10');
+        const logs = data.logs || [];
+        const container = document.getElementById('adminMonitorLogs');
+        container.innerHTML = logs.map(l => {
+            const icon = l.status === 'success' ? '✅' : l.status === 'failed' ? '❌' : '⏳';
+            return `<div class="flex items-center gap-2 text-sm p-2 bg-gray-50 rounded">
+                <span>${icon}</span>
+                <span class="font-medium">${l.job_name}</span>
+                <span class="text-gray-400">${l.events_found} event, ${l.alerts_sent} alert</span>
+            </div>`;
+        }).join('');
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+async function testTelegram() {
+    try {
+        const message = document.getElementById('testMessage').value;
+        const result = await apiPost('/api/admin/telegram/test', { message });
+        const div = document.getElementById('telegramResult');
+        div.classList.remove('hidden');
+        div.className = 'rounded-lg bg-green-50 border border-green-200 p-3 text-sm text-green-700';
+        div.textContent = '✅ ' + result.message;
+    } catch (err) {
+        const div = document.getElementById('telegramResult');
+        div.classList.remove('hidden');
+        div.className = 'rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-700';
+        div.textContent = '❌ ' + err.message;
+    }
+}
+
+// Initial load
+document.addEventListener('DOMContentLoaded', () => {
+    loadUsers();
+    loadMonitorLogsAdmin();
+});
+</script>
+{% endblock %}

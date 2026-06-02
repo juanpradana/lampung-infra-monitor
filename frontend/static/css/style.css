@@ -1,0 +1,30 @@
+/* Lampung Infrastructure Monitor - Custom Styles */
+
+/* Smooth transitions */
+* { transition-property: background-color, border-color, color, opacity; transition-duration: 150ms; }
+
+/* Table row hover */
+tbody tr:hover { background-color: #f9fafb; }
+
+/* Chart canvas */
+canvas { max-width: 100%; }
+
+/* Custom scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #f1f5f9; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+/* Loading spinner */
+.loading { display: inline-block; width: 20px; height: 20px; border: 2px solid #e2e8f0; border-top-color: #3b82f6; border-radius: 50%; animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Severity badges animation */
+@keyframes pulse-critical { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+.severity-critical { animation: pulse-critical 2s infinite; }
+
+/* Responsive table */
+@media (max-width: 768px) {
+    table { font-size: 0.8rem; }
+    th, td { padding: 0.5rem 0.25rem; }
+}
