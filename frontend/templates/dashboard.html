@@ -1,169 +1,151 @@
 {% extends "base.html" %}
-
 {% block title %}Dashboard — {{ app_name }}{% endblock %}
-
 {% block content %}
 <!-- Filters -->
-<div class="bg-white rounded-xl shadow-sm border p-4 mb-6">
-    <div class="flex flex-wrap items-end gap-4">
-        <div class="flex-1 min-w-[200px]">
-            <label class="block text-sm font-medium text-gray-700 mb-1">📅 Rentang Waktu</label>
+<div class="bg-white rounded-xl shadow-sm border p-3 sm:p-4 mb-4 sm:mb-6">
+    <div class="grid grid-cols-2 sm:flex sm:flex-wrap sm:items-end gap-3 sm:gap-4">
+        <div class="col-span-2 sm:flex-1 sm:min-w-[160px]">
+            <label class="block text-xs font-medium text-gray-600 mb-1">📅 Waktu</label>
             <select id="filterDays" class="w-full rounded-lg border-gray-300 text-sm focus:ring-primary-500">
                 <option value="1">Hari ini</option>
-                <option value="7">7 hari terakhir</option>
-                <option value="30" selected>30 hari terakhir</option>
-                <option value="90">90 hari terakhir</option>
-                <option value="365">1 tahun terakhir</option>
+                <option value="7">7 hari</option>
+                <option value="30" selected>30 hari</option>
+                <option value="90">90 hari</option>
+                <option value="365">1 tahun</option>
             </select>
         </div>
-        <div class="flex-1 min-w-[200px]">
-            <label class="block text-sm font-medium text-gray-700 mb-1">📍 Kabupaten/Kota</label>
+        <div class="col-span-2 sm:flex-1 sm:min-w-[160px]">
+            <label class="block text-xs font-medium text-gray-600 mb-1">📍 Kab/Kota</label>
             <select id="filterKabupaten" class="w-full rounded-lg border-gray-300 text-sm focus:ring-primary-500">
-                <option value="">Semua Kabupaten/Kota</option>
+                <option value="">Semua</option>
             </select>
         </div>
-        <div class="flex-1 min-w-[200px]">
-            <label class="block text-sm font-medium text-gray-700 mb-1">📁 Kategori</label>
+        <div class="col-span-2 sm:flex-1 sm:min-w-[160px]">
+            <label class="block text-xs font-medium text-gray-600 mb-1">📁 Kategori</label>
             <select id="filterCategory" class="w-full rounded-lg border-gray-300 text-sm focus:ring-primary-500">
-                <option value="">Semua Kategori</option>
-                <option value="bencana">🌊 Bencana Alam</option>
-                <option value="gangguan_listrik">⚡ Gangguan Listrik</option>
-                <option value="gangguan_telekomunikasi">📡 Gangguan Telekomunikasi</option>
-                <option value="infrastruktur">🏗️ Infrastruktur</option>
-                <option value="cuaca_ekstrem">🌪️ Cuaca Ekstrem</option>
+                <option value="">Semua</option>
+                <option value="bencana">🌊 Bencana</option>
+                <option value="gangguan_listrik">⚡ Listrik</option>
+                <option value="gangguan_telekomunikasi">📡 Telkom</option>
+                <option value="infrastruktur">🏗️ Infra</option>
+                <option value="cuaca_ekstrem">🌪️ Cuaca</option>
                 <option value="lainnya">📌 Lainnya</option>
             </select>
         </div>
-        <div class="flex-1 min-w-[200px]">
-            <label class="block text-sm font-medium text-gray-700 mb-1">🔍 Cari</label>
+        <div class="col-span-2 sm:flex-1 sm:min-w-[160px]">
+            <label class="block text-xs font-medium text-gray-600 mb-1">🔍 Cari</label>
             <input type="text" id="filterSearch" placeholder="Cari insiden..."
                 class="w-full rounded-lg border-gray-300 text-sm focus:ring-primary-500">
         </div>
-        <button onclick="loadDashboard()" class="bg-primary-600 hover:bg-primary-700 text-white px-6 py-2.5 rounded-lg text-sm font-medium transition">
-            🔄 Refresh
-        </button>
+        <div class="col-span-2 sm:col-auto">
+            <button onclick="loadDashboard()" class="w-full sm:w-auto bg-primary-600 hover:bg-primary-700 text-white px-6 py-2 rounded-lg text-sm font-medium transition">🔄 Refresh</button>
+        </div>
     </div>
 </div>
 
 <!-- Stats Cards -->
-<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-    <div class="bg-white rounded-xl shadow-sm border p-5">
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
+    <div class="bg-white rounded-xl shadow-sm border p-3 sm:p-5">
         <div class="flex items-center justify-between">
-            <div>
-                <p class="text-sm text-gray-500">Total Insiden</p>
-                <p class="text-3xl font-bold text-gray-900" id="statTotal">-</p>
-            </div>
-            <div class="bg-blue-100 rounded-full p-3">📊</div>
+            <div><p class="text-xs sm:text-sm text-gray-500">Total</p><p class="text-2xl sm:text-3xl font-bold text-gray-900" id="statTotal">-</p></div>
+            <div class="bg-blue-100 rounded-full p-2 sm:p-3 text-lg sm:text-2xl">📊</div>
         </div>
-        <p class="text-xs text-gray-400 mt-2" id="statPeriod">30 hari terakhir</p>
+        <p class="text-xs text-gray-400 mt-1" id="statPeriod">30 hari</p>
     </div>
-    <div class="bg-white rounded-xl shadow-sm border p-5">
+    <div class="bg-white rounded-xl shadow-sm border p-3 sm:p-5">
         <div class="flex items-center justify-between">
-            <div>
-                <p class="text-sm text-gray-500">Aktif</p>
-                <p class="text-3xl font-bold text-red-600" id="statActive">-</p>
-            </div>
-            <div class="bg-red-100 rounded-full p-3">🔴</div>
+            <div><p class="text-xs sm:text-sm text-gray-500">Aktif</p><p class="text-2xl sm:text-3xl font-bold text-red-600" id="statActive">-</p></div>
+            <div class="bg-red-100 rounded-full p-2 sm:p-3 text-lg sm:text-2xl">🔴</div>
         </div>
-        <p class="text-xs text-gray-400 mt-2">Sedang dipantau</p>
     </div>
-    <div class="bg-white rounded-xl shadow-sm border p-5">
+    <div class="bg-white rounded-xl shadow-sm border p-3 sm:p-5">
         <div class="flex items-center justify-between">
-            <div>
-                <p class="text-sm text-gray-500">Hari Ini</p>
-                <p class="text-3xl font-bold text-orange-600" id="statToday">-</p>
-            </div>
-            <div class="bg-orange-100 rounded-full p-3">📅</div>
+            <div><p class="text-xs sm:text-sm text-gray-500">Hari Ini</p><p class="text-2xl sm:text-3xl font-bold text-orange-600" id="statToday">-</p></div>
+            <div class="bg-orange-100 rounded-full p-2 sm:p-3 text-lg sm:text-2xl">📅</div>
         </div>
-        <p class="text-xs text-gray-400 mt-2">Insiden hari ini</p>
     </div>
-    <div class="bg-white rounded-xl shadow-sm border p-5">
+    <div class="bg-white rounded-xl shadow-sm border p-3 sm:p-5">
         <div class="flex items-center justify-between">
-            <div>
-                <p class="text-sm text-gray-500">Selesai</p>
-                <p class="text-3xl font-bold text-green-600" id="statResolved">-</p>
-            </div>
-            <div class="bg-green-100 rounded-full p-3">✅</div>
+            <div><p class="text-xs sm:text-sm text-gray-500">Selesai</p><p class="text-2xl sm:text-3xl font-bold text-green-600" id="statResolved">-</p></div>
+            <div class="bg-green-100 rounded-full p-2 sm:p-3 text-lg sm:text-2xl">✅</div>
         </div>
-        <p class="text-xs text-gray-400 mt-2">Insiden terselesaikan</p>
     </div>
 </div>
 
 <!-- Charts Row -->
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-    <!-- Timeline Chart -->
-    <div class="bg-white rounded-xl shadow-sm border p-5">
-        <h3 class="text-lg font-semibold text-gray-800 mb-4">📈 Timeline Insiden</h3>
-        <div class="h-64">
-            <canvas id="timelineChart"></canvas>
-        </div>
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-4 sm:mb-6">
+    <div class="bg-white rounded-xl shadow-sm border p-4 sm:p-5">
+        <h3 class="text-base sm:text-lg font-semibold text-gray-800 mb-3">📈 Timeline</h3>
+        <div class="h-48 sm:h-64"><canvas id="timelineChart"></canvas></div>
     </div>
-
-    <!-- Category Chart -->
-    <div class="bg-white rounded-xl shadow-sm border p-5">
-        <h3 class="text-lg font-semibold text-gray-800 mb-4">📊 Kategori Insiden</h3>
-        <div class="h-64">
-            <canvas id="categoryChart"></canvas>
-        </div>
+    <div class="bg-white rounded-xl shadow-sm border p-4 sm:p-5">
+        <h3 class="text-base sm:text-lg font-semibold text-gray-800 mb-3">📊 Kategori</h3>
+        <div class="h-48 sm:h-64"><canvas id="categoryChart"></canvas></div>
     </div>
 </div>
 
-<!-- Location & Severity Row -->
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-    <!-- Top Kabupaten -->
-    <div class="bg-white rounded-xl shadow-sm border p-5">
-        <h3 class="text-lg font-semibold text-gray-800 mb-4">📍 Top Kabupaten/Kota</h3>
-        <div id="locationList" class="space-y-3">
-            <p class="text-gray-400 text-sm">Memuat data...</p>
-        </div>
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-4 sm:mb-6">
+    <div class="bg-white rounded-xl shadow-sm border p-4 sm:p-5">
+        <h3 class="text-base sm:text-lg font-semibold text-gray-800 mb-3">📍 Top Lokasi</h3>
+        <div id="locationList" class="space-y-2 sm:space-y-3"><p class="text-gray-400 text-sm">Memuat...</p></div>
     </div>
-
-    <!-- Severity Distribution -->
-    <div class="bg-white rounded-xl shadow-sm border p-5">
-        <h3 class="text-lg font-semibold text-gray-800 mb-4">⚠️ Distribusi Severity</h3>
-        <div class="h-48">
-            <canvas id="severityChart"></canvas>
-        </div>
+    <div class="bg-white rounded-xl shadow-sm border p-4 sm:p-5">
+        <h3 class="text-base sm:text-lg font-semibold text-gray-800 mb-3">⚠️ Severity</h3>
+        <div class="h-40 sm:h-48"><canvas id="severityChart"></canvas></div>
     </div>
 </div>
 
-<!-- Events Table -->
-<div class="bg-white rounded-xl shadow-sm border">
-    <div class="p-5 border-b flex items-center justify-between">
-        <h3 class="text-lg font-semibold text-gray-800">📋 Daftar Insiden</h3>
+<!-- Events: Desktop Table -->
+<div class="hidden sm:block bg-white rounded-xl shadow-sm border">
+    <div class="p-4 sm:p-5 border-b flex items-center justify-between">
+        <h3 class="text-base sm:text-lg font-semibold text-gray-800">📋 Daftar Insiden</h3>
         <span id="eventCount" class="text-sm text-gray-500">-</span>
     </div>
     <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200">
+        <table class="min-w-full divide-y divide-gray-200 text-sm">
             <thead class="bg-gray-50">
                 <tr>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Waktu</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Judul</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Lokasi</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Kategori</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Severity</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Sumber</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Waktu</th>
+                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Judul</th>
+                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Lokasi</th>
+                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Kategori</th>
+                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Severity</th>
+                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Sumber</th>
+                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
                 </tr>
             </thead>
             <tbody id="eventsTable" class="divide-y divide-gray-200">
-                <tr><td colspan="7" class="px-4 py-8 text-center text-gray-400">Memuat data...</td></tr>
+                <tr><td colspan="7" class="px-4 py-8 text-center text-gray-400">Memuat...</td></tr>
             </tbody>
         </table>
     </div>
-    <div class="p-4 border-t flex items-center justify-between">
-        <button id="prevPage" onclick="changePage(-1)" class="text-sm text-primary-600 hover:text-primary-800 disabled:opacity-50" disabled>← Sebelumnya</button>
-        <span id="pageInfo" class="text-sm text-gray-500">-</span>
-        <button id="nextPage" onclick="changePage(1)" class="text-sm text-primary-600 hover:text-primary-800 disabled:opacity-50" disabled>Selanjutnya →</button>
+    <div class="p-3 sm:p-4 border-t flex items-center justify-between">
+        <button id="prevPage" onclick="changePage(-1)" class="text-sm text-primary-600 hover:text-primary-800 disabled:opacity-50" disabled>← Prev</button>
+        <span id="pageInfo" class="text-xs sm:text-sm text-gray-500">-</span>
+        <button id="nextPage" onclick="changePage(1)" class="text-sm text-primary-600 hover:text-primary-800 disabled:opacity-50" disabled>Next →</button>
+    </div>
+</div>
+
+<!-- Events: Mobile Cards -->
+<div class="sm:hidden bg-white rounded-xl shadow-sm border">
+    <div class="p-3 border-b flex items-center justify-between">
+        <h3 class="text-base font-semibold text-gray-800">📋 Insiden</h3>
+        <span id="eventCountMobile" class="text-xs text-gray-500">-</span>
+    </div>
+    <div id="eventsCards" class="divide-y divide-gray-100">
+        <p class="p-4 text-center text-gray-400 text-sm">Memuat...</p>
+    </div>
+    <div class="p-3 border-t flex items-center justify-between">
+        <button id="prevPageMobile" onclick="changePage(-1)" class="text-sm text-primary-600 disabled:opacity-50" disabled>← Prev</button>
+        <span id="pageInfoMobile" class="text-xs text-gray-500">-</span>
+        <button id="nextPageMobile" onclick="changePage(1)" class="text-sm text-primary-600 disabled:opacity-50" disabled>Next →</button>
     </div>
 </div>
 
 <!-- Monitoring Status -->
-<div class="mt-6 bg-white rounded-xl shadow-sm border p-5">
-    <h3 class="text-lg font-semibold text-gray-800 mb-4">🤖 Status Monitoring</h3>
-    <div id="monitorLogs" class="space-y-2">
-        <p class="text-gray-400 text-sm">Memuat log...</p>
-    </div>
+<div class="mt-4 sm:mt-6 bg-white rounded-xl shadow-sm border p-4 sm:p-5">
+    <h3 class="text-base sm:text-lg font-semibold text-gray-800 mb-3">🤖 Status Monitoring</h3>
+    <div id="monitorLogs" class="space-y-2"><p class="text-gray-400 text-sm">Memuat...</p></div>
 </div>
 {% endblock %}
 
@@ -173,277 +155,193 @@ let currentPage = 1;
 let totalPages = 1;
 let timelineChart, categoryChart, severityChart;
 
-const CATEGORY_LABELS = {
-    'bencana': '🌊 Bencana',
-    'gangguan_listrik': '⚡ Listrik',
-    'gangguan_telekomunikasi': '📡 Telkom',
-    'infrastruktur': '🏗️ Infra',
-    'cuaca_ekstrem': '🌪️ Cuaca',
-    'lainnya': '📌 Lainnya'
-};
-
-const SEVERITY_COLORS = {
-    'critical': '#ef4444',
-    'high': '#f97316',
-    'medium': '#eab308',
-    'low': '#22c55e'
-};
-
-const STATUS_BADGES = {
-    'active': 'bg-red-100 text-red-700',
-    'monitoring': 'bg-yellow-100 text-yellow-700',
-    'resolved': 'bg-green-100 text-green-700',
-    'closed': 'bg-gray-100 text-gray-700'
-};
+const CATEGORY_LABELS = {'bencana':'🌊 Bencana','gangguan_listrik':'⚡ Listrik','gangguan_telekomunikasi':'📡 Telkom','infrastruktur':'🏗️ Infra','cuaca_ekstrem':'🌪️ Cuaca','lainnya':'📌 Lainnya'};
+const SEVERITY_COLORS = {'critical':'#ef4444','high':'#f97316','medium':'#eab308','low':'#22c55e'};
+const STATUS_BADGES = {'active':'bg-red-100 text-red-700','monitoring':'bg-yellow-100 text-yellow-700','resolved':'bg-green-100 text-green-700','closed':'bg-gray-100 text-gray-700'};
+const SEV_BADGES = {'critical':'bg-red-100 text-red-700','high':'bg-orange-100 text-orange-700','medium':'bg-yellow-100 text-yellow-700','low':'bg-green-100 text-green-700'};
 
 async function loadDashboard() {
     const days = document.getElementById('filterDays').value;
-    const kabupaten = document.getElementById('filterKabupaten').value;
-    const category = document.getElementById('filterCategory').value;
-
-    document.getElementById('statPeriod').textContent = `${days} hari terakhir`;
-
-    await Promise.all([
-        loadStats(days, kabupaten),
-        loadTimeline(days, kabupaten),
-        loadCategories(days, kabupaten),
-        loadLocations(days),
-        loadEvents(),
-        loadMonitorLogs(),
-        loadKabupatenList(),
-    ]);
+    document.getElementById('statPeriod').textContent = days == 1 ? 'Hari ini' : days + ' hari';
+    await Promise.all([loadStats(days), loadTimeline(days), loadCategories(days), loadLocations(days), loadEvents(), loadMonitorLogs(), loadKabupatenList()]);
 }
 
-async function loadStats(days, kabupaten) {
+async function loadStats(days) {
     try {
-        const params = new URLSearchParams({ days });
-        const data = await apiGet(`/api/dashboard/stats?${params}`);
+        const data = await apiGet('/api/dashboard/stats?days=' + days);
         document.getElementById('statTotal').textContent = data.total_events;
         document.getElementById('statActive').textContent = data.active_events;
         document.getElementById('statToday').textContent = data.today_events;
         document.getElementById('statResolved').textContent = data.resolved_events;
-
-        // Severity chart
-        const sevData = data.by_severity || {};
-        renderSeverityChart(sevData);
-    } catch (err) {
-        console.error('Stats error:', err);
-    }
+        renderSeverityChart(data.by_severity || {});
+    } catch(e) { console.error(e); }
 }
 
 async function loadTimeline(days) {
     try {
-        const data = await apiGet(`/api/dashboard/timeline?days=${days}`);
-        const timeline = data.timeline || [];
-
-        const labels = timeline.map(t => t.date);
-        const values = timeline.map(t => t.total);
-
+        const data = await apiGet('/api/dashboard/timeline?days=' + days);
+        const t = data.timeline || [];
         if (timelineChart) timelineChart.destroy();
-        const ctx = document.getElementById('timelineChart').getContext('2d');
-        timelineChart = new Chart(ctx, {
+        timelineChart = new Chart(document.getElementById('timelineChart').getContext('2d'), {
             type: 'line',
-            data: {
-                labels,
-                datasets: [{
-                    label: 'Jumlah Insiden',
-                    data: values,
-                    borderColor: '#3b82f6',
-                    backgroundColor: 'rgba(59,130,246,0.1)',
-                    fill: true,
-                    tension: 0.3,
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
-            }
+            data: { labels: t.map(x=>x.date), datasets: [{ label: 'Insiden', data: t.map(x=>x.total), borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.1)', fill: true, tension: 0.3 }] },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
         });
-    } catch (err) {
-        console.error('Timeline error:', err);
-    }
+    } catch(e) { console.error(e); }
 }
 
 async function loadCategories(days) {
     try {
-        const data = await apiGet(`/api/dashboard/by-category?days=${days}`);
-        const cats = data.categories || [];
-
-        const labels = cats.map(c => CATEGORY_LABELS[c.category] || c.category);
-        const values = cats.map(c => c.count);
-        const colors = ['#3b82f6', '#ef4444', '#f59e0b', '#10b981', '#8b5cf6', '#6b7280'];
-
+        const data = await apiGet('/api/dashboard/by-category?days=' + days);
+        const c = data.categories || [];
         if (categoryChart) categoryChart.destroy();
-        const ctx = document.getElementById('categoryChart').getContext('2d');
-        categoryChart = new Chart(ctx, {
+        categoryChart = new Chart(document.getElementById('categoryChart').getContext('2d'), {
             type: 'doughnut',
-            data: { labels, datasets: [{ data: values, backgroundColor: colors }] },
+            data: { labels: c.map(x=>CATEGORY_LABELS[x.category]||x.category), datasets: [{ data: c.map(x=>x.count), backgroundColor: ['#3b82f6','#ef4444','#f59e0b','#10b981','#8b5cf6','#6b7280'] }] },
             options: { responsive: true, maintainAspectRatio: false }
         });
-    } catch (err) {
-        console.error('Categories error:', err);
-    }
+    } catch(e) { console.error(e); }
 }
 
 async function loadLocations(days) {
     try {
-        const data = await apiGet(`/api/dashboard/by-location?days=${days}`);
-        const locations = data.locations || [];
-
-        const container = document.getElementById('locationList');
-        if (locations.length === 0) {
-            container.innerHTML = '<p class="text-gray-400 text-sm">Tidak ada data</p>';
-            return;
-        }
-
-        const maxCount = locations[0]?.total || 1;
-        container.innerHTML = locations.slice(0, 8).map(loc => `
-            <div class="flex items-center gap-3">
-                <span class="text-sm font-medium text-gray-700 w-32 truncate">${loc.kabupaten}</span>
-                <div class="flex-1 bg-gray-100 rounded-full h-5 overflow-hidden">
-                    <div class="bg-primary-500 h-5 rounded-full flex items-center justify-end pr-2 text-xs text-white font-medium"
-                         style="width: ${(loc.total / maxCount * 100)}%">${loc.total}</div>
-                </div>
-            </div>
-        `).join('');
-    } catch (err) {
-        console.error('Locations error:', err);
-    }
+        const data = await apiGet('/api/dashboard/by-location?days=' + days);
+        const locs = data.locations || [];
+        const el = document.getElementById('locationList');
+        if (!locs.length) { el.innerHTML = '<p class="text-gray-400 text-sm">Tidak ada data</p>'; return; }
+        const mx = locs[0]?.total || 1;
+        el.innerHTML = locs.slice(0,8).map(l =>
+            '<div class="flex items-center gap-2 sm:gap-3">' +
+            '<span class="text-xs sm:text-sm font-medium text-gray-700 w-24 sm:w-32 truncate">' + l.kabupaten + '</span>' +
+            '<div class="flex-1 bg-gray-100 rounded-full h-4 sm:h-5 overflow-hidden">' +
+            '<div class="bg-primary-500 h-full rounded-full flex items-center justify-end pr-1 sm:pr-2 text-xs text-white font-medium" style="width:' + (l.total/mx*100) + '%">' + l.total + '</div></div></div>'
+        ).join('');
+    } catch(e) { console.error(e); }
 }
 
-function renderSeverityChart(sevData) {
-    const labels = ['Critical', 'High', 'Medium', 'Low'];
-    const keys = ['critical', 'high', 'medium', 'low'];
-    const values = keys.map(k => sevData[k] || 0);
-    const colors = keys.map(k => SEVERITY_COLORS[k]);
-
+function renderSeverityChart(s) {
+    const keys = ['critical','high','medium','low'];
     if (severityChart) severityChart.destroy();
-    const ctx = document.getElementById('severityChart').getContext('2d');
-    severityChart = new Chart(ctx, {
+    severityChart = new Chart(document.getElementById('severityChart').getContext('2d'), {
         type: 'bar',
-        data: { labels, datasets: [{ data: values, backgroundColor: colors }] },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-            scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
-        }
+        data: { labels: ['Critical','High','Medium','Low'], datasets: [{ data: keys.map(k=>s[k]||0), backgroundColor: keys.map(k=>SEVERITY_COLORS[k]) }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
     });
+}
+
+function makeSourceLink(source, url) {
+    if (!url) return '<span class="text-xs text-gray-500">' + (source||'-') + '</span>';
+    const display = (source || 'Sumber').replace(/^Google News - /, '').substring(0, 30);
+    return '<a href="' + url + '" target="_blank" rel="noopener" class="text-xs text-blue-600 hover:text-blue-800 hover:underline truncate block max-w-[150px]" title="' + (source||'') + '">' + display + ' ↗</a>';
 }
 
 async function loadEvents() {
     try {
-        const params = new URLSearchParams({
-            page: currentPage,
-            per_page: 20,
-        });
-
+        const p = new URLSearchParams({ page: currentPage, per_page: 20 });
         const days = document.getElementById('filterDays').value;
-        const kabupaten = document.getElementById('filterKabupaten').value;
-        const category = document.getElementById('filterCategory').value;
-        const search = document.getElementById('filterSearch').value;
+        const kab = document.getElementById('filterKabupaten').value;
+        const cat = document.getElementById('filterCategory').value;
+        const q = document.getElementById('filterSearch').value;
+        if (days) p.set('date_from', new Date(Date.now() - days * 86400000).toISOString());
+        if (kab) p.set('kabupaten', kab);
+        if (cat) p.set('category', cat);
+        if (q) p.set('search', q);
 
-        if (days) params.set('date_from', new Date(Date.now() - days * 86400000).toISOString());
-        if (kabupaten) params.set('kabupaten', kabupaten);
-        if (category) params.set('category', category);
-        if (search) params.set('search', search);
-
-        const data = await apiGet(`/api/events?${params}`);
+        const data = await apiGet('/api/events?' + p);
         totalPages = data.pages;
 
-        document.getElementById('eventCount').textContent = `${data.total} insiden`;
-        document.getElementById('pageInfo').textContent = `Halaman ${data.page} dari ${data.pages}`;
+        // Desktop table
+        document.getElementById('eventCount').textContent = data.total + ' insiden';
+        document.getElementById('pageInfo').textContent = data.page + '/' + data.pages;
         document.getElementById('prevPage').disabled = data.page <= 1;
         document.getElementById('nextPage').disabled = data.page >= data.pages;
 
-        const tbody = document.getElementById('eventsTable');
-        if (data.events.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" class="px-4 py-8 text-center text-gray-400">Tidak ada data</td></tr>';
+        // Mobile cards
+        document.getElementById('eventCountMobile').textContent = data.total + ' insiden';
+        document.getElementById('pageInfoMobile').textContent = data.page + '/' + data.pages;
+        document.getElementById('prevPageMobile').disabled = data.page <= 1;
+        document.getElementById('nextPageMobile').disabled = data.page >= data.pages;
+
+        if (!data.events.length) {
+            document.getElementById('eventsTable').innerHTML = '<tr><td colspan="7" class="px-4 py-8 text-center text-gray-400">Tidak ada data</td></tr>';
+            document.getElementById('eventsCards').innerHTML = '<p class="p-4 text-center text-gray-400 text-sm">Tidak ada data</p>';
             return;
         }
 
-        tbody.innerHTML = data.events.map(e => {
-            const date = e.created_at ? new Date(e.created_at).toLocaleDateString('id-ID', {day:'2-digit',month:'short',year:'numeric'}) : '-';
-            const sevClass = e.severity === 'critical' ? 'text-red-700 bg-red-50' : e.severity === 'high' ? 'text-orange-700 bg-orange-50' : e.severity === 'medium' ? 'text-yellow-700 bg-yellow-50' : 'text-green-700 bg-green-50';
-            const statusClass = STATUS_BADGES[e.status] || 'bg-gray-100 text-gray-700';
-            const location = [e.kabupaten, e.kecamatan].filter(Boolean).join(', ') || 'Lampung';
-            return `<tr class="hover:bg-gray-50">
-                <td class="px-4 py-3 text-sm text-gray-600">${date}</td>
-                <td class="px-4 py-3 text-sm font-medium text-gray-900 max-w-xs truncate">${e.title}</td>
-                <td class="px-4 py-3 text-sm text-gray-600">${location}</td>
-                <td class="px-4 py-3 text-sm"><span class="text-xs">${CATEGORY_LABELS[e.category] || e.category}</span></td>
-                <td class="px-4 py-3"><span class="text-xs px-2 py-1 rounded-full ${sevClass}">${e.severity}</span></td>
-                <td class="px-4 py-3 text-xs text-gray-500">${e.source || '-'}</td>
-                <td class="px-4 py-3"><span class="text-xs px-2 py-1 rounded-full ${statusClass}">${e.status}</span></td>
-            </tr>`;
+        // Desktop rows
+        document.getElementById('eventsTable').innerHTML = data.events.map(e => {
+            const d = e.created_at ? new Date(e.created_at).toLocaleDateString('id-ID',{day:'2-digit',month:'short'}) : '-';
+            const loc = [e.kabupaten, e.kecamatan].filter(Boolean).join(', ') || '-';
+            return '<tr class="hover:bg-gray-50">' +
+                '<td class="px-3 py-2 text-xs text-gray-500 whitespace-nowrap">' + d + '</td>' +
+                '<td class="px-3 py-2 text-sm font-medium text-gray-900 max-w-[200px] truncate">' + e.title + '</td>' +
+                '<td class="px-3 py-2 text-xs text-gray-600">' + loc + '</td>' +
+                '<td class="px-3 py-2 text-xs">' + (CATEGORY_LABELS[e.category]||e.category) + '</td>' +
+                '<td class="px-3 py-2"><span class="text-xs px-2 py-0.5 rounded-full ' + (SEV_BADGES[e.severity]||'') + '">' + e.severity + '</span></td>' +
+                '<td class="px-3 py-2">' + makeSourceLink(e.source, e.source_url) + '</td>' +
+                '<td class="px-3 py-2"><span class="text-xs px-2 py-0.5 rounded-full ' + (STATUS_BADGES[e.status]||'') + '">' + e.status + '</span></td>' +
+                '</tr>';
         }).join('');
-    } catch (err) {
-        console.error('Events error:', err);
-    }
+
+        // Mobile cards
+        document.getElementById('eventsCards').innerHTML = data.events.map(e => {
+            const d = e.created_at ? new Date(e.created_at).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'}) : '-';
+            const loc = [e.kabupaten, e.kecamatan].filter(Boolean).join(', ') || '-';
+            const src = makeSourceLink(e.source, e.source_url);
+            return '<div class="p-3 hover:bg-gray-50">' +
+                '<div class="flex items-start justify-between gap-2 mb-1">' +
+                    '<span class="text-xs text-gray-500">' + d + '</span>' +
+                    '<div class="flex gap-1">' +
+                        '<span class="text-xs px-1.5 py-0.5 rounded-full ' + (SEV_BADGES[e.severity]||'') + '">' + e.severity + '</span>' +
+                        '<span class="text-xs px-1.5 py-0.5 rounded-full ' + (STATUS_BADGES[e.status]||'') + '">' + e.status + '</span>' +
+                    '</div>' +
+                '</div>' +
+                '<p class="text-sm font-medium text-gray-900 leading-snug mb-1">' + e.title + '</p>' +
+                '<div class="flex items-center justify-between text-xs text-gray-500">' +
+                    '<span>📍 ' + loc + ' · ' + (CATEGORY_LABELS[e.category]||e.category) + '</span>' +
+                    src +
+                '</div>' +
+                '</div>';
+        }).join('');
+
+    } catch(e) { console.error(e); }
 }
 
 async function loadMonitorLogs() {
     try {
         const data = await apiGet('/api/dashboard/monitoring-logs?limit=5');
-        const logs = data.logs || [];
-        const container = document.getElementById('monitorLogs');
-
-        if (logs.length === 0) {
-            container.innerHTML = '<p class="text-gray-400 text-sm">Belum ada log monitoring</p>';
-            return;
-        }
-
-        container.innerHTML = logs.map(l => {
-            const statusIcon = l.status === 'success' ? '✅' : l.status === 'failed' ? '❌' : '⏳';
-            const time = l.started_at ? new Date(l.started_at).toLocaleString('id-ID') : '-';
-            return `<div class="flex items-center gap-3 text-sm p-2 bg-gray-50 rounded-lg">
-                <span>${statusIcon}</span>
-                <span class="font-medium">${l.job_name}</span>
-                <span class="text-gray-500">${time}</span>
-                <span class="text-blue-600">${l.events_found} event</span>
-                <span class="text-green-600">${l.alerts_sent} alert</span>
-            </div>`;
+        const el = document.getElementById('monitorLogs');
+        if (!data.logs?.length) { el.innerHTML = '<p class="text-gray-400 text-sm">Belum ada log</p>'; return; }
+        el.innerHTML = data.logs.map(l => {
+            const icon = l.status === 'success' ? '✅' : l.status === 'failed' ? '❌' : '⏳';
+            const t = l.started_at ? new Date(l.started_at).toLocaleString('id-ID') : '-';
+            return '<div class="flex flex-wrap items-center gap-2 text-xs sm:text-sm p-2 bg-gray-50 rounded-lg">' +
+                '<span>' + icon + '</span><span class="font-medium">' + l.job_name + '</span>' +
+                '<span class="text-gray-500">' + t + '</span>' +
+                '<span class="text-blue-600">' + l.events_found + ' evt</span>' +
+                '<span class="text-green-600">' + l.alerts_sent + ' alert</span></div>';
         }).join('');
-    } catch (err) {
-        console.error('Monitor logs error:', err);
-    }
+    } catch(e) { console.error(e); }
 }
 
 async function loadKabupatenList() {
     try {
         const data = await apiGet('/api/admin/locations');
-        const locations = data.locations || {};
-        const select = document.getElementById('filterKabupaten');
-        const current = select.value;
-
-        // Clear and add default
-        select.innerHTML = '<option value="">Semua Kabupaten/Kota</option>';
-        Object.keys(locations).sort().forEach(kab => {
-            select.innerHTML += `<option value="${kab}">${kab}</option>`;
-        });
-        select.value = current;
-    } catch (err) {
-        console.error('Kabupaten list error:', err);
-    }
+        const sel = document.getElementById('filterKabupaten');
+        const cur = sel.value;
+        sel.innerHTML = '<option value="">Semua</option>';
+        Object.keys(data.locations||{}).sort().forEach(k => { sel.innerHTML += '<option value="'+k+'">'+k+'</option>'; });
+        sel.value = cur;
+    } catch(e) { console.error(e); }
 }
 
-function changePage(delta) {
-    currentPage = Math.max(1, Math.min(totalPages, currentPage + delta));
-    loadEvents();
-}
+function changePage(d) { currentPage = Math.max(1, Math.min(totalPages, currentPage + d)); loadEvents(); }
 
-// Auto-refresh every 5 minutes
 setInterval(loadDashboard, 300000);
-
-// Filter change listeners
-document.getElementById('filterDays').addEventListener('change', () => { currentPage = 1; loadDashboard(); });
-document.getElementById('filterKabupaten').addEventListener('change', () => { currentPage = 1; loadEvents(); });
-document.getElementById('filterCategory').addEventListener('change', () => { currentPage = 1; loadEvents(); });
-document.getElementById('filterSearch').addEventListener('keyup', debounce(() => { currentPage = 1; loadEvents(); }, 500));
-
-// Initial load
+document.getElementById('filterDays').addEventListener('change', () => { currentPage=1; loadDashboard(); });
+document.getElementById('filterKabupaten').addEventListener('change', () => { currentPage=1; loadEvents(); });
+document.getElementById('filterCategory').addEventListener('change', () => { currentPage=1; loadEvents(); });
+document.getElementById('filterSearch').addEventListener('keyup', debounce(() => { currentPage=1; loadEvents(); }, 500));
 document.addEventListener('DOMContentLoaded', loadDashboard);
 </script>
 {% endblock %}

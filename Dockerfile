@@ -17,6 +17,9 @@ COPY . .
 # Create data directory
 RUN mkdir -p /app/data
 
+# Copy .env.example as default config if .env not mounted
+RUN cp .env.example .env 2>/dev/null || true
+
 # Expose port
 EXPOSE 8032
 
