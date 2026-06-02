@@ -83,10 +83,10 @@ python3 -m backend.main
 ### Docker
 
 ```bash
-docker-compose up -d
+docker compose up -d
 ```
 
-Dashboard tersedia di `http://localhost:8000`
+Dashboard tersedia di `http://localhost:8032`
 
 ## ⚙️ Konfigurasi
 
@@ -95,7 +95,7 @@ Copy `.env.example` ke `.env` dan sesuaikan:
 ```env
 # Aplikasi
 APP_NAME=Lampung Infrastructure Monitor
-APP_PORT=8000
+APP_PORT=8032
 SECRET_KEY=your-secret-key-change-this
 
 # Database

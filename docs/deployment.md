@@ -19,20 +19,20 @@ python3 -m backend.init_db
 
 # 4. Run
 python3 -m backend.main
-# Access: http://localhost:8000
+# Access: http://localhost:8032
 ```
 
 ## 🐳 Docker
 
 ```bash
 # Build & run
-docker-compose up -d
+docker compose up -d
 
 # View logs
-docker-compose logs -f
+docker compose logs -f
 
 # Stop
-docker-compose down
+docker compose down
 ```
 
 ## 🌐 Production (VPS)
@@ -104,7 +104,7 @@ server {
     server_name monitor.balmon-lampung.go.id;
 
     location / {
-        proxy_pass http://127.0.0.1:8000;
+        proxy_pass http://127.0.0.1:8032;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;

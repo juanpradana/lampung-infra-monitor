@@ -8,7 +8,7 @@ from functools import lru_cache
 class Settings(BaseSettings):
     # App
     APP_NAME: str = "Lampung Infrastructure Monitor"
-    APP_PORT: int = 8000
+    APP_PORT: int = 8032
     APP_HOST: str = "0.0.0.0"
     DEBUG: bool = True
 

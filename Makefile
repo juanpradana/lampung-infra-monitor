@@ -16,20 +16,20 @@ run:
 
 # Run with uvicorn directly
 serve:
-	uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
+	uvicorn backend.main:app --host 0.0.0.0 --port 8032 --reload
 
 # Docker commands
 docker-build:
-	docker-compose build
+	docker compose build
 
 docker-run:
-	docker-compose up -d
+	docker compose up -d
 
 docker-stop:
-	docker-compose down
+	docker compose down
 
 docker-logs:
-	docker-compose logs -f
+	docker compose logs -f
 
 # Run tests
 test:
