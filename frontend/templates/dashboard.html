@@ -1,12 +1,13 @@
 {% extends "base.html" %}
 {% block title %}Dashboard — {{ app_name }}{% endblock %}
 {% block content %}
-<!-- Filters -->
-<div class="bg-white rounded-xl shadow-sm border p-3 sm:p-4 mb-4 sm:mb-6">
+
+{# ─── Filters ────────────────────────────────────────────────────────── #}
+<div class="card p-3 sm:p-4 mb-4 sm:mb-6 animate-fade-in-up">
     <div class="grid grid-cols-2 sm:flex sm:flex-wrap sm:items-end gap-3 sm:gap-4">
         <div class="col-span-2 sm:flex-1 sm:min-w-[160px]">
-            <label class="block text-xs font-medium text-gray-600 mb-1">📅 Waktu</label>
-            <select id="filterDays" class="w-full rounded-lg border-gray-300 text-sm focus:ring-primary-500">
+            <label for="filterDays" class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Waktu</label>
+            <select id="filterDays" class="input select" aria-label="Filter periode waktu">
                 <option value="1">Hari ini</option>
                 <option value="7">7 hari</option>
                 <option value="30" selected>30 hari</option>
@@ -15,137 +16,180 @@
             </select>
         </div>
         <div class="col-span-2 sm:flex-1 sm:min-w-[160px]">
-            <label class="block text-xs font-medium text-gray-600 mb-1">📍 Kab/Kota</label>
-            <select id="filterKabupaten" class="w-full rounded-lg border-gray-300 text-sm focus:ring-primary-500">
+            <label for="filterKabupaten" class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Kab/Kota</label>
+            <select id="filterKabupaten" class="input select" aria-label="Filter kabupaten kota">
                 <option value="">Semua</option>
             </select>
         </div>
         <div class="col-span-2 sm:flex-1 sm:min-w-[160px]">
-            <label class="block text-xs font-medium text-gray-600 mb-1">📁 Kategori</label>
-            <select id="filterCategory" class="w-full rounded-lg border-gray-300 text-sm focus:ring-primary-500">
+            <label for="filterCategory" class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Kategori</label>
+            <select id="filterCategory" class="input select" aria-label="Filter kategori">
                 <option value="">Semua</option>
-                <option value="bencana">🌊 Bencana</option>
-                <option value="gangguan_listrik">⚡ Listrik</option>
-                <option value="gangguan_telekomunikasi">📡 Telkom</option>
-                <option value="infrastruktur">🏗️ Infra</option>
-                <option value="cuaca_ekstrem">🌪️ Cuaca</option>
-                <option value="lainnya">📌 Lainnya</option>
+                <option value="bencana">Bencana</option>
+                <option value="gangguan_listrik">Listrik</option>
+                <option value="gangguan_telekomunikasi">Telkom</option>
+                <option value="infrastruktur">Infra</option>
+                <option value="cuaca_ekstrem">Cuaca</option>
+                <option value="lainnya">Lainnya</option>
             </select>
         </div>
         <div class="col-span-2 sm:flex-1 sm:min-w-[160px]">
-            <label class="block text-xs font-medium text-gray-600 mb-1">🔍 Cari</label>
-            <input type="text" id="filterSearch" placeholder="Cari insiden..."
-                class="w-full rounded-lg border-gray-300 text-sm focus:ring-primary-500">
+            <label for="filterSearch" class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Cari</label>
+            <input type="text" id="filterSearch" placeholder="Cari insiden..." class="input" aria-label="Cari insiden">
         </div>
         <div class="col-span-2 sm:col-auto">
-            <button onclick="loadDashboard()" class="w-full sm:w-auto bg-primary-600 hover:bg-primary-700 text-white px-6 py-2 rounded-lg text-sm font-medium transition">🔄 Refresh</button>
+            <button onclick="loadDashboard()" class="btn btn-primary w-full sm:w-auto" aria-label="Muat ulang dashboard">
+                <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>
+                Refresh
+            </button>
         </div>
     </div>
 </div>
 
-<!-- Stats Cards -->
-<div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
-    <div class="bg-white rounded-xl shadow-sm border p-3 sm:p-5">
+{# ─── Stat Cards ──────────────────────────────────────────────────────── #}
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6 stagger">
+    <!-- Total -->
+    <div class="stat-card" data-color="blue">
         <div class="flex items-center justify-between">
-            <div><p class="text-xs sm:text-sm text-gray-500">Total</p><p class="text-2xl sm:text-3xl font-bold text-gray-900" id="statTotal">-</p></div>
-            <div class="bg-blue-100 rounded-full p-2 sm:p-3 text-lg sm:text-2xl">📊</div>
+            <div>
+                <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Total</p>
+                <p class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100" id="statTotal">-</p>
+            </div>
+            <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center" style="background: var(--brand-100);">
+                <svg class="w-5 h-5 sm:w-6 sm:h-6" style="color: var(--brand-600);" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3"/></svg>
+            </div>
         </div>
-        <p class="text-xs text-gray-400 mt-1" id="statPeriod">30 hari</p>
+        <p class="text-xs text-gray-400 dark:text-gray-500 mt-1" id="statPeriod">30 hari</p>
     </div>
-    <div class="bg-white rounded-xl shadow-sm border p-3 sm:p-5">
+    <!-- Aktif -->
+    <div class="stat-card" data-color="red">
         <div class="flex items-center justify-between">
-            <div><p class="text-xs sm:text-sm text-gray-500">Aktif</p><p class="text-2xl sm:text-3xl font-bold text-red-600" id="statActive">-</p></div>
-            <div class="bg-red-100 rounded-full p-2 sm:p-3 text-lg sm:text-2xl">🔴</div>
+            <div>
+                <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Aktif</p>
+                <p class="text-2xl sm:text-3xl font-bold" style="color: var(--danger);" id="statActive">-</p>
+            </div>
+            <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center" style="background: var(--danger-bg);">
+                <svg class="w-5 h-5 sm:w-6 sm:h-6" style="color: var(--danger);" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
+            </div>
         </div>
     </div>
-    <div class="bg-white rounded-xl shadow-sm border p-3 sm:p-5">
+    <!-- Hari Ini -->
+    <div class="stat-card" data-color="orange">
         <div class="flex items-center justify-between">
-            <div><p class="text-xs sm:text-sm text-gray-500">Hari Ini</p><p class="text-2xl sm:text-3xl font-bold text-orange-600" id="statToday">-</p></div>
-            <div class="bg-orange-100 rounded-full p-2 sm:p-3 text-lg sm:text-2xl">📅</div>
+            <div>
+                <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Hari Ini</p>
+                <p class="text-2xl sm:text-3xl font-bold" style="color: var(--warning);" id="statToday">-</p>
+            </div>
+            <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center" style="background: var(--warning-bg);">
+                <svg class="w-5 h-5 sm:w-6 sm:h-6" style="color: var(--warning);" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+            </div>
         </div>
     </div>
-    <div class="bg-white rounded-xl shadow-sm border p-3 sm:p-5">
+    <!-- Selesai -->
+    <div class="stat-card" data-color="green">
         <div class="flex items-center justify-between">
-            <div><p class="text-xs sm:text-sm text-gray-500">Selesai</p><p class="text-2xl sm:text-3xl font-bold text-green-600" id="statResolved">-</p></div>
-            <div class="bg-green-100 rounded-full p-2 sm:p-3 text-lg sm:text-2xl">✅</div>
+            <div>
+                <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Selesai</p>
+                <p class="text-2xl sm:text-3xl font-bold" style="color: var(--success);" id="statResolved">-</p>
+            </div>
+            <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center" style="background: var(--success-bg);">
+                <svg class="w-5 h-5 sm:w-6 sm:h-6" style="color: var(--success);" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            </div>
         </div>
     </div>
 </div>
 
-<!-- Charts Row -->
+{# ─── Charts Row: Timeline + Category ────────────────────────────────── #}
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-4 sm:mb-6">
-    <div class="bg-white rounded-xl shadow-sm border p-4 sm:p-5">
-        <h3 class="text-base sm:text-lg font-semibold text-gray-800 mb-3">📈 Timeline</h3>
+    <div class="card p-4 sm:p-5">
+        <h3 class="text-base sm:text-lg font-semibold text-gray-800 dark:text-gray-200 mb-3">Timeline</h3>
         <div class="h-48 sm:h-64"><canvas id="timelineChart"></canvas></div>
     </div>
-    <div class="bg-white rounded-xl shadow-sm border p-4 sm:p-5">
-        <h3 class="text-base sm:text-lg font-semibold text-gray-800 mb-3">📊 Kategori</h3>
+    <div class="card p-4 sm:p-5">
+        <h3 class="text-base sm:text-lg font-semibold text-gray-800 dark:text-gray-200 mb-3">Kategori</h3>
         <div class="h-48 sm:h-64"><canvas id="categoryChart"></canvas></div>
     </div>
 </div>
 
+{# ─── Second Row: Top Locations + Severity ────────────────────────────── #}
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-4 sm:mb-6">
-    <div class="bg-white rounded-xl shadow-sm border p-4 sm:p-5">
-        <h3 class="text-base sm:text-lg font-semibold text-gray-800 mb-3">📍 Top Lokasi</h3>
-        <div id="locationList" class="space-y-2 sm:space-y-3"><p class="text-gray-400 text-sm">Memuat...</p></div>
+    <div class="card p-4 sm:p-5">
+        <h3 class="text-base sm:text-lg font-semibold text-gray-800 dark:text-gray-200 mb-3">Top Lokasi</h3>
+        <div id="locationList" class="space-y-2 sm:space-y-3">
+            <p class="text-gray-400 dark:text-gray-500 text-sm">Memuat...</p>
+        </div>
     </div>
-    <div class="bg-white rounded-xl shadow-sm border p-4 sm:p-5">
-        <h3 class="text-base sm:text-lg font-semibold text-gray-800 mb-3">⚠️ Severity</h3>
+    <div class="card p-4 sm:p-5">
+        <h3 class="text-base sm:text-lg font-semibold text-gray-800 dark:text-gray-200 mb-3">Severity</h3>
         <div class="h-40 sm:h-48"><canvas id="severityChart"></canvas></div>
     </div>
 </div>
 
-<!-- Events: Desktop Table -->
-<div class="hidden sm:block bg-white rounded-xl shadow-sm border">
-    <div class="p-4 sm:p-5 border-b flex items-center justify-between">
-        <h3 class="text-base sm:text-lg font-semibold text-gray-800">📋 Daftar Insiden</h3>
-        <span id="eventCount" class="text-sm text-gray-500">-</span>
+{# ─── Events: Desktop Table ──────────────────────────────────────────── #}
+<div class="hidden sm:block card">
+    <div class="p-4 sm:p-5 border-b border-gray-200 dark:border-slate-700 flex items-center justify-between">
+        <h3 class="text-base sm:text-lg font-semibold text-gray-800 dark:text-gray-200">Daftar Insiden</h3>
+        <span id="eventCount" class="text-sm text-gray-500 dark:text-gray-400">-</span>
     </div>
-    <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200 text-sm">
-            <thead class="bg-gray-50">
+    <div class="table-wrapper">
+        <table class="table" aria-label="Daftar insiden">
+            <thead>
                 <tr>
-                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Waktu</th>
-                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Judul</th>
-                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Lokasi</th>
-                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Kategori</th>
-                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Severity</th>
-                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Sumber</th>
-                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                    <th scope="col">Waktu</th>
+                    <th scope="col">Judul</th>
+                    <th scope="col">Lokasi</th>
+                    <th scope="col">Kategori</th>
+                    <th scope="col">Severity</th>
+                    <th scope="col">Sumber</th>
+                    <th scope="col">Status</th>
                 </tr>
             </thead>
-            <tbody id="eventsTable" class="divide-y divide-gray-200">
-                <tr><td colspan="7" class="px-4 py-8 text-center text-gray-400">Memuat...</td></tr>
+            <tbody id="eventsTable">
+                <tr><td colspan="7" class="px-4 py-8 text-center text-gray-400 dark:text-gray-500">Memuat...</td></tr>
             </tbody>
         </table>
     </div>
-    <div class="p-3 sm:p-4 border-t flex items-center justify-between">
-        <button id="prevPage" onclick="changePage(-1)" class="text-sm text-primary-600 hover:text-primary-800 disabled:opacity-50" disabled>← Prev</button>
-        <span id="pageInfo" class="text-xs sm:text-sm text-gray-500">-</span>
-        <button id="nextPage" onclick="changePage(1)" class="text-sm text-primary-600 hover:text-primary-800 disabled:opacity-50" disabled>Next →</button>
+    <div class="p-3 sm:p-4 border-t border-gray-200 dark:border-slate-700 flex items-center justify-between">
+        <button id="prevPage" onclick="changePage(-1)" class="btn btn-ghost btn-sm" disabled aria-label="Halaman sebelumnya">
+            <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+            Prev
+        </button>
+        <span id="pageInfo" class="text-xs sm:text-sm text-gray-500 dark:text-gray-400">-</span>
+        <button id="nextPage" onclick="changePage(1)" class="btn btn-ghost btn-sm" disabled aria-label="Halaman berikutnya">
+            Next
+            <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+        </button>
     </div>
 </div>
 
-<!-- Events: Mobile Cards -->
-<div class="sm:hidden bg-white rounded-xl shadow-sm border">
-    <div class="p-3 border-b flex items-center justify-between">
-        <h3 class="text-base font-semibold text-gray-800">📋 Insiden</h3>
-        <span id="eventCountMobile" class="text-xs text-gray-500">-</span>
+{# ─── Events: Mobile Cards ────────────────────────────────────────────── #}
+<div class="sm:hidden card">
+    <div class="p-3 border-b border-gray-200 dark:border-slate-700 flex items-center justify-between">
+        <h3 class="text-base font-semibold text-gray-800 dark:text-gray-200">Insiden</h3>
+        <span id="eventCountMobile" class="text-xs text-gray-500 dark:text-gray-400">-</span>
     </div>
-    <div id="eventsCards" class="divide-y divide-gray-100">
-        <p class="p-4 text-center text-gray-400 text-sm">Memuat...</p>
+    <div id="eventsCards">
+        <p class="p-4 text-center text-gray-400 dark:text-gray-500 text-sm">Memuat...</p>
     </div>
-    <div class="p-3 border-t flex items-center justify-between">
-        <button id="prevPageMobile" onclick="changePage(-1)" class="text-sm text-primary-600 disabled:opacity-50" disabled>← Prev</button>
-        <span id="pageInfoMobile" class="text-xs text-gray-500">-</span>
-        <button id="nextPageMobile" onclick="changePage(1)" class="text-sm text-primary-600 disabled:opacity-50" disabled>Next →</button>
+    <div class="p-3 border-t border-gray-200 dark:border-slate-700 flex items-center justify-between">
+        <button id="prevPageMobile" onclick="changePage(-1)" class="btn btn-ghost btn-sm" disabled aria-label="Halaman sebelumnya">
+            <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+            Prev
+        </button>
+        <span id="pageInfoMobile" class="text-xs text-gray-500 dark:text-gray-400">-</span>
+        <button id="nextPageMobile" onclick="changePage(1)" class="btn btn-ghost btn-sm" disabled aria-label="Halaman berikutnya">
+            Next
+            <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+        </button>
     </div>
 </div>
 
-<!-- Monitoring Status -->
-<div class="mt-4 sm:mt-6 bg-white rounded-xl shadow-sm border p-4 sm:p-5">
-    <h3 class="text-base sm:text-lg font-semibold text-gray-800 mb-3">🤖 Status Monitoring</h3>
-    <div id="monitorLogs" class="space-y-2"><p class="text-gray-400 text-sm">Memuat...</p></div>
+{# ─── Monitoring Status ──────────────────────────────────────────────── #}
+<div class="mt-4 sm:mt-6 card p-4 sm:p-5">
+    <h3 class="text-base sm:text-lg font-semibold text-gray-800 dark:text-gray-200 mb-3">Status Monitoring</h3>
+    <div id="monitorLogs" class="space-y-2">
+        <p class="text-gray-400 dark:text-gray-500 text-sm">Memuat...</p>
+    </div>
 </div>
 {% endblock %}
 
@@ -155,10 +199,10 @@ let currentPage = 1;
 let totalPages = 1;
 let timelineChart, categoryChart, severityChart;
 
-const CATEGORY_LABELS = {'bencana':'🌊 Bencana','gangguan_listrik':'⚡ Listrik','gangguan_telekomunikasi':'📡 Telkom','infrastruktur':'🏗️ Infra','cuaca_ekstrem':'🌪️ Cuaca','lainnya':'📌 Lainnya'};
+const CATEGORY_LABELS = {'bencana':'Bencana','gangguan_listrik':'Listrik','gangguan_telekomunikasi':'Telkom','infrastruktur':'Infra','cuaca_ekstrem':'Cuaca','lainnya':'Lainnya'};
 const SEVERITY_COLORS = {'critical':'#ef4444','high':'#f97316','medium':'#eab308','low':'#22c55e'};
-const STATUS_BADGES = {'active':'bg-red-100 text-red-700','monitoring':'bg-yellow-100 text-yellow-700','resolved':'bg-green-100 text-green-700','closed':'bg-gray-100 text-gray-700'};
-const SEV_BADGES = {'critical':'bg-red-100 text-red-700','high':'bg-orange-100 text-orange-700','medium':'bg-yellow-100 text-yellow-700','low':'bg-green-100 text-green-700'};
+const STATUS_BADGES = {'active':'badge badge-active','monitoring':'badge badge-monitoring','resolved':'badge badge-resolved','closed':'badge badge-closed'};
+const SEV_BADGES = {'critical':'badge badge-critical','high':'badge badge-high','medium':'badge badge-medium','low':'badge badge-low'};
 
 async function loadDashboard() {
     const days = document.getElementById('filterDays').value;
@@ -184,8 +228,8 @@ async function loadTimeline(days) {
         if (timelineChart) timelineChart.destroy();
         timelineChart = new Chart(document.getElementById('timelineChart').getContext('2d'), {
             type: 'line',
-            data: { labels: t.map(x=>x.date), datasets: [{ label: 'Insiden', data: t.map(x=>x.total), borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.1)', fill: true, tension: 0.3 }] },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+            data: { labels: t.map(x=>x.date), datasets: [{ label: 'Insiden', data: t.map(x=>x.total), borderColor: getComputedStyle(document.documentElement).getPropertyValue('--brand-500').trim() || '#3b82f6', backgroundColor: (getComputedStyle(document.documentElement).getPropertyValue('--brand-500').trim() || '#3b82f6') + '1a', fill: true, tension: 0.3, pointBackgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--brand-500').trim() || '#3b82f6', pointBorderColor: '#fff', pointBorderWidth: 2, pointRadius: 3 }] },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: getComputedStyle(document.documentElement).getPropertyValue('--border-light').trim() || '#f1f5f9' } }, x: { grid: { display: false } } } }
         });
     } catch(e) { console.error(e); }
 }
@@ -197,8 +241,8 @@ async function loadCategories(days) {
         if (categoryChart) categoryChart.destroy();
         categoryChart = new Chart(document.getElementById('categoryChart').getContext('2d'), {
             type: 'doughnut',
-            data: { labels: c.map(x=>CATEGORY_LABELS[x.category]||x.category), datasets: [{ data: c.map(x=>x.count), backgroundColor: ['#3b82f6','#ef4444','#f59e0b','#10b981','#8b5cf6','#6b7280'] }] },
-            options: { responsive: true, maintainAspectRatio: false }
+            data: { labels: c.map(x=>CATEGORY_LABELS[x.category]||x.category), datasets: [{ data: c.map(x=>x.count), backgroundColor: ['#3b82f6','#ef4444','#f59e0b','#10b981','#8b5cf6','#6b7280'], borderColor: getComputedStyle(document.documentElement).getPropertyValue('--surface').trim() || '#ffffff', borderWidth: 2 }] },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: getComputedStyle(document.documentElement).getPropertyValue('--ink-secondary').trim() || '#475569', padding: 12, font: { size: 11 } } } } }
         });
     } catch(e) { console.error(e); }
 }
@@ -208,13 +252,13 @@ async function loadLocations(days) {
         const data = await apiGet('/api/dashboard/by-location?days=' + days);
         const locs = data.locations || [];
         const el = document.getElementById('locationList');
-        if (!locs.length) { el.innerHTML = '<p class="text-gray-400 text-sm">Tidak ada data</p>'; return; }
+        if (!locs.length) { el.innerHTML = '<p class="text-gray-400 dark:text-gray-500 text-sm">Tidak ada data</p>'; return; }
         const mx = locs[0]?.total || 1;
         el.innerHTML = locs.slice(0,8).map(l =>
             '<div class="flex items-center gap-2 sm:gap-3">' +
-            '<span class="text-xs sm:text-sm font-medium text-gray-700 w-24 sm:w-32 truncate">' + l.kabupaten + '</span>' +
-            '<div class="flex-1 bg-gray-100 rounded-full h-4 sm:h-5 overflow-hidden">' +
-            '<div class="bg-primary-500 h-full rounded-full flex items-center justify-end pr-1 sm:pr-2 text-xs text-white font-medium" style="width:' + (l.total/mx*100) + '%">' + l.total + '</div></div></div>'
+            '<span class="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 w-24 sm:w-32 truncate">' + l.kabupaten + '</span>' +
+            '<div class="flex-1 bg-gray-100 dark:bg-slate-700 rounded-full h-4 sm:h-5 overflow-hidden">' +
+            '<div class="h-full rounded-full flex items-center justify-end pr-1 sm:pr-2 text-xs text-white font-medium" style="width:' + (l.total/mx*100) + '%;background:var(--brand-500);">' + l.total + '</div></div></div>'
         ).join('');
     } catch(e) { console.error(e); }
 }
@@ -224,15 +268,15 @@ function renderSeverityChart(s) {
     if (severityChart) severityChart.destroy();
     severityChart = new Chart(document.getElementById('severityChart').getContext('2d'), {
         type: 'bar',
-        data: { labels: ['Critical','High','Medium','Low'], datasets: [{ data: keys.map(k=>s[k]||0), backgroundColor: keys.map(k=>SEVERITY_COLORS[k]) }] },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+        data: { labels: ['Critical','High','Medium','Low'], datasets: [{ data: keys.map(k=>s[k]||0), backgroundColor: keys.map(k=>SEVERITY_COLORS[k]), borderRadius: 4, borderSkipped: false }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: getComputedStyle(document.documentElement).getPropertyValue('--border-light').trim() || '#f1f5f9' } }, x: { grid: { display: false } } } }
     });
 }
 
 function makeSourceLink(source, url) {
-    if (!url) return '<span class="text-xs text-gray-500">' + (source||'-') + '</span>';
+    if (!url) return '<span class="text-xs text-gray-500 dark:text-gray-400">' + (source||'-') + '</span>';
     const display = (source || 'Sumber').replace(/^Google News - /, '').substring(0, 30);
-    return '<a href="' + url + '" target="_blank" rel="noopener" class="text-xs text-blue-600 hover:text-blue-800 hover:underline truncate block max-w-[150px]" title="' + (source||'') + '">' + display + ' ↗</a>';
+    return '<a href="' + url + '" target="_blank" rel="noopener" class="source-link" title="' + (source||'') + '">' + display + ' <svg class="w-3 h-3 inline" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><path d="M7 7h10v10"/></svg></a>';
 }
 
 async function loadEvents() {
@@ -263,8 +307,8 @@ async function loadEvents() {
         document.getElementById('nextPageMobile').disabled = data.page >= data.pages;
 
         if (!data.events.length) {
-            document.getElementById('eventsTable').innerHTML = '<tr><td colspan="7" class="px-4 py-8 text-center text-gray-400">Tidak ada data</td></tr>';
-            document.getElementById('eventsCards').innerHTML = '<p class="p-4 text-center text-gray-400 text-sm">Tidak ada data</p>';
+            document.getElementById('eventsTable').innerHTML = '<tr><td colspan="7" class="px-4 py-8 text-center text-gray-400 dark:text-gray-500">Tidak ada data</td></tr>';
+            document.getElementById('eventsCards').innerHTML = '<p class="p-4 text-center text-gray-400 dark:text-gray-500 text-sm">Tidak ada data</p>';
             return;
         }
 
@@ -272,14 +316,14 @@ async function loadEvents() {
         document.getElementById('eventsTable').innerHTML = data.events.map(e => {
             const d = e.created_at ? new Date(e.created_at).toLocaleDateString('id-ID',{day:'2-digit',month:'short'}) : '-';
             const loc = [e.kabupaten, e.kecamatan].filter(Boolean).join(', ') || '-';
-            return '<tr class="hover:bg-gray-50">' +
-                '<td class="px-3 py-2 text-xs text-gray-500 whitespace-nowrap">' + d + '</td>' +
-                '<td class="px-3 py-2 text-sm font-medium text-gray-900 max-w-[200px] truncate">' + e.title + '</td>' +
-                '<td class="px-3 py-2 text-xs text-gray-600">' + loc + '</td>' +
-                '<td class="px-3 py-2 text-xs">' + (CATEGORY_LABELS[e.category]||e.category) + '</td>' +
-                '<td class="px-3 py-2"><span class="text-xs px-2 py-0.5 rounded-full ' + (SEV_BADGES[e.severity]||'') + '">' + e.severity + '</span></td>' +
-                '<td class="px-3 py-2">' + makeSourceLink(e.source, e.source_url) + '</td>' +
-                '<td class="px-3 py-2"><span class="text-xs px-2 py-0.5 rounded-full ' + (STATUS_BADGES[e.status]||'') + '">' + e.status + '</span></td>' +
+            return '<tr>' +
+                '<td class="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">' + d + '</td>' +
+                '<td class="text-sm font-medium text-gray-900 dark:text-gray-100 max-w-[200px] truncate">' + e.title + '</td>' +
+                '<td class="text-xs text-gray-600 dark:text-gray-400">' + loc + '</td>' +
+                '<td class="text-xs">' + (CATEGORY_LABELS[e.category]||e.category) + '</td>' +
+                '<td><span class="' + (SEV_BADGES[e.severity]||'') + '">' + e.severity + '</span></td>' +
+                '<td>' + makeSourceLink(e.source, e.source_url) + '</td>' +
+                '<td><span class="' + (STATUS_BADGES[e.status]||'') + '">' + e.status + '</span></td>' +
                 '</tr>';
         }).join('');
 
@@ -288,17 +332,17 @@ async function loadEvents() {
             const d = e.created_at ? new Date(e.created_at).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'}) : '-';
             const loc = [e.kabupaten, e.kecamatan].filter(Boolean).join(', ') || '-';
             const src = makeSourceLink(e.source, e.source_url);
-            return '<div class="p-3 hover:bg-gray-50">' +
+            return '<div class="event-card">' +
                 '<div class="flex items-start justify-between gap-2 mb-1">' +
-                    '<span class="text-xs text-gray-500">' + d + '</span>' +
+                    '<span class="text-xs text-gray-500 dark:text-gray-400">' + d + '</span>' +
                     '<div class="flex gap-1">' +
-                        '<span class="text-xs px-1.5 py-0.5 rounded-full ' + (SEV_BADGES[e.severity]||'') + '">' + e.severity + '</span>' +
-                        '<span class="text-xs px-1.5 py-0.5 rounded-full ' + (STATUS_BADGES[e.status]||'') + '">' + e.status + '</span>' +
+                        '<span class="' + (SEV_BADGES[e.severity]||'') + '">' + e.severity + '</span>' +
+                        '<span class="' + (STATUS_BADGES[e.status]||'') + '">' + e.status + '</span>' +
                     '</div>' +
                 '</div>' +
-                '<p class="text-sm font-medium text-gray-900 leading-snug mb-1">' + e.title + '</p>' +
-                '<div class="flex items-center justify-between text-xs text-gray-500">' +
-                    '<span>📍 ' + loc + ' · ' + (CATEGORY_LABELS[e.category]||e.category) + '</span>' +
+                '<p class="text-sm font-medium text-gray-900 dark:text-gray-100 leading-snug mb-1">' + e.title + '</p>' +
+                '<div class="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">' +
+                    '<span>' + loc + ' &middot; ' + (CATEGORY_LABELS[e.category]||e.category) + '</span>' +
                     src +
                 '</div>' +
                 '</div>';
@@ -311,15 +355,21 @@ async function loadMonitorLogs() {
     try {
         const data = await apiGet('/api/dashboard/monitoring-logs?limit=5');
         const el = document.getElementById('monitorLogs');
-        if (!data.logs?.length) { el.innerHTML = '<p class="text-gray-400 text-sm">Belum ada log</p>'; return; }
+        if (!data.logs?.length) { el.innerHTML = '<p class="text-gray-400 dark:text-gray-500 text-sm">Belum ada log</p>'; return; }
         el.innerHTML = data.logs.map(l => {
-            const icon = l.status === 'success' ? '✅' : l.status === 'failed' ? '❌' : '⏳';
+            const iconSuccess = '<svg class="w-4 h-4 flex-shrink-0" style="color:var(--success);" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>';
+            const iconFailed = '<svg class="w-4 h-4 flex-shrink-0" style="color:var(--danger);" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" x2="9" y1="9" y2="15"/><line x1="9" x2="15" y1="9" y2="15"/></svg>';
+            const iconPending = '<svg class="w-4 h-4 flex-shrink-0" style="color:var(--warning);" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
+            const icon = l.status === 'success' ? iconSuccess : l.status === 'failed' ? iconFailed : iconPending;
+            const badgeClass = l.status === 'success' ? 'badge badge-success' : l.status === 'failed' ? 'badge badge-failed' : 'badge badge-monitoring';
             const t = l.started_at ? new Date(l.started_at).toLocaleString('id-ID') : '-';
-            return '<div class="flex flex-wrap items-center gap-2 text-xs sm:text-sm p-2 bg-gray-50 rounded-lg">' +
-                '<span>' + icon + '</span><span class="font-medium">' + l.job_name + '</span>' +
-                '<span class="text-gray-500">' + t + '</span>' +
-                '<span class="text-blue-600">' + l.events_found + ' evt</span>' +
-                '<span class="text-green-600">' + l.alerts_sent + ' alert</span></div>';
+            return '<div class="flex flex-wrap items-center gap-2 text-xs sm:text-sm p-2 bg-gray-50 dark:bg-slate-800 rounded-lg">' +
+                '<span>' + icon + '</span>' +
+                '<span class="font-medium text-gray-800 dark:text-gray-200">' + l.job_name + '</span>' +
+                '<span class="' + badgeClass + '">' + l.status + '</span>' +
+                '<span class="text-gray-500 dark:text-gray-400">' + t + '</span>' +
+                '<span class="text-blue-600 dark:text-blue-400">' + l.events_found + ' evt</span>' +
+                '<span class="text-green-600 dark:text-green-400">' + l.alerts_sent + ' alert</span></div>';
         }).join('');
     } catch(e) { console.error(e); }
 }

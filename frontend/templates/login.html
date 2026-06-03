@@ -2,115 +2,271 @@
 <html lang="id" class="h-full">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Login — {{ app_name }}</title>
+
+    <!-- Google Fonts Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
-            theme: { extend: { colors: { primary: { 50:'#eff6ff',100:'#dbeafe',200:'#bfdbfe',300:'#93c5fd',400:'#60a5fa',500:'#3b82f6',600:'#2563eb',700:'#1d4ed8',800:'#1e40af',900:'#1e3a8a' } } } }
+            theme: {
+                extend: {
+                    colors: {
+                        primary: { 50:'#eff6ff',100:'#dbeafe',200:'#bfdbfe',300:'#93c5fd',400:'#60a5fa',500:'#3b82f6',600:'#2563eb',700:'#1d4ed8',800:'#1e40af',900:'#1e3a8a' }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif']
+                    }
+                }
+            }
         }
     </script>
+
+    <!-- Design system tokens -->
+    <link rel="stylesheet" href="/static/css/style.css">
+
+    <style>
+        /* Entrance animation for the login card */
+        @keyframes loginCardEnter {
+            from {
+                opacity: 0;
+                transform: translateY(24px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes logoEnter {
+            from {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @keyframes subtlePulse {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
+        }
+
+        .login-card {
+            animation: loginCardEnter 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            animation-delay: 0.15s;
+            opacity: 0;
+        }
+
+        .login-logo {
+            animation: logoEnter 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .signal-dot {
+            animation: subtlePulse 2s ease-in-out infinite;
+        }
+        .signal-dot:nth-child(2) { animation-delay: 0.3s; }
+        .signal-dot:nth-child(3) { animation-delay: 0.6s; }
+
+        /* Form input min-height for 44px touch targets */
+        .touch-input {
+            min-height: 44px;
+        }
+    </style>
 </head>
-<body class="h-full bg-gradient-to-br from-primary-900 via-primary-800 to-gray-900">
-    <div class="flex min-h-full flex-col justify-center py-12 sm:px-6 lg:px-8">
-        <div class="sm:mx-auto sm:w-full sm:max-w-md">
-            <div class="text-center">
-                <span class="text-6xl">📡</span>
-                <h2 class="mt-4 text-3xl font-bold tracking-tight text-white">{{ app_name }}</h2>
-                <p class="mt-2 text-sm text-primary-200">Balai Monitor Spektrum Frekuensi Radio Kelas II Lampung</p>
-                <p class="mt-1 text-xs text-primary-300">Tim Kualitas Layanan Infrastruktur Digital</p>
+<body class="h-full font-sans bg-gradient-to-br from-slate-900 via-primary-800 to-slate-900">
+
+    <!-- Subtle background pattern -->
+    <div class="fixed inset-0 opacity-[0.03] pointer-events-none" style="background-image: url(&quot;data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E&quot;);"></div>
+
+    <div class="relative flex min-h-full flex-col items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
+
+        <!-- Branding / Logo Area -->
+        <div class="login-logo text-center mb-8">
+            <!-- Inline SVG Radio Tower Icon -->
+            <div class="mx-auto mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48" fill="none" class="drop-shadow-lg">
+                    <!-- Signal waves -->
+                    <circle cx="24" cy="14" r="16" stroke="rgba(147,197,253,0.3)" stroke-width="1.5" fill="none" class="signal-dot"/>
+                    <circle cx="24" cy="14" r="11" stroke="rgba(147,197,253,0.45)" stroke-width="1.5" fill="none" class="signal-dot"/>
+                    <circle cx="24" cy="14" r="6" stroke="rgba(147,197,253,0.65)" stroke-width="1.5" fill="none" class="signal-dot"/>
+                    <!-- Tower body -->
+                    <line x1="24" y1="8" x2="24" y2="40" stroke="#93c5fd" stroke-width="2.5" stroke-linecap="round"/>
+                    <!-- Tower crossbars -->
+                    <line x1="19" y1="18" x2="29" y2="18" stroke="#93c5fd" stroke-width="2" stroke-linecap="round"/>
+                    <line x1="21" y1="26" x2="27" y2="26" stroke="#93c5fd" stroke-width="2" stroke-linecap="round"/>
+                    <!-- Tower base legs -->
+                    <line x1="24" y1="32" x2="18" y2="42" stroke="#93c5fd" stroke-width="2" stroke-linecap="round"/>
+                    <line x1="24" y1="32" x2="30" y2="42" stroke="#93c5fd" stroke-width="2" stroke-linecap="round"/>
+                    <!-- Tower apex -->
+                    <circle cx="24" cy="8" r="2.5" fill="#60a5fa"/>
+                </svg>
             </div>
+
+            <h1 class="text-2xl sm:text-3xl font-bold tracking-tight text-white">
+                Lampung Infra Monitor
+            </h1>
+            <p class="mt-2 text-sm text-primary-200">
+                Balai Monitor Spektrum Frekuensi Radio Kelas II Lampung
+            </p>
+            <p class="mt-1 text-xs text-primary-300">
+                Tim Kualitas Layanan Infrastruktur Digital
+            </p>
         </div>
 
-        <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-            <div class="bg-white/10 backdrop-blur-lg py-8 px-6 shadow-2xl rounded-2xl border border-white/20">
-                <form id="loginForm" class="space-y-6">
+        <!-- Login Card — Glassmorphism -->
+        <div class="login-card w-full max-w-md">
+            <div class="rounded-2xl border border-white/15 bg-white/10 px-6 py-8 shadow-2xl backdrop-blur-xl sm:px-10"
+                 style="box-shadow: 0 8px 32px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.08);">
+
+                <form id="loginForm" class="space-y-5" novalidate>
+                    <!-- Username -->
                     <div>
-                        <label for="username" class="block text-sm font-medium text-white">Username</label>
-                        <div class="mt-1">
-                            <input id="username" name="username" type="text" required autocomplete="username"
-                                class="block w-full rounded-lg border-0 bg-white/10 py-3 px-4 text-white placeholder:text-gray-400 focus:ring-2 focus:ring-primary-400 focus:bg-white/20 sm:text-sm"
-                                placeholder="Masukkan username">
+                        <label for="username" class="mb-1.5 block text-sm font-medium text-primary-100">
+                            Username
+                        </label>
+                        <input
+                            id="username"
+                            name="username"
+                            type="text"
+                            required
+                            autocomplete="username"
+                            autofocus
+                            placeholder="Masukkan username"
+                            class="touch-input block w-full rounded-xl border border-white/15 bg-white/10 px-4 text-sm text-white placeholder-white/40 transition-all duration-200 focus:border-primary-400/60 focus:bg-white/15 focus:outline-none focus:ring-2 focus:ring-primary-400/30"
+                        >
+                    </div>
+
+                    <!-- Password -->
+                    <div>
+                        <label for="password" class="mb-1.5 block text-sm font-medium text-primary-100">
+                            Password
+                        </label>
+                        <input
+                            id="password"
+                            name="password"
+                            type="password"
+                            required
+                            autocomplete="current-password"
+                            placeholder="Masukkan password"
+                            class="touch-input block w-full rounded-xl border border-white/15 bg-white/10 px-4 text-sm text-white placeholder-white/40 transition-all duration-200 focus:border-primary-400/60 focus:bg-white/15 focus:outline-none focus:ring-2 focus:ring-primary-400/30"
+                        >
+                    </div>
+
+                    <!-- Error Message -->
+                    <div id="errorMsg" class="hidden rounded-xl border border-red-400/30 bg-red-500/15 px-4 py-3 backdrop-blur-sm">
+                        <div class="flex items-start gap-2.5">
+                            <svg class="mt-0.5 h-4 w-4 flex-shrink-0 text-red-300" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                            </svg>
+                            <p class="text-sm font-medium text-red-200" id="errorText"></p>
                         </div>
                     </div>
 
-                    <div>
-                        <label for="password" class="block text-sm font-medium text-white">Password</label>
-                        <div class="mt-1">
-                            <input id="password" name="password" type="password" required autocomplete="current-password"
-                                class="block w-full rounded-lg border-0 bg-white/10 py-3 px-4 text-white placeholder:text-gray-400 focus:ring-2 focus:ring-primary-400 focus:bg-white/20 sm:text-sm"
-                                placeholder="Masukkan password">
-                        </div>
-                    </div>
-
-                    <div id="errorMsg" class="hidden rounded-lg bg-red-500/20 border border-red-400/30 p-3">
-                        <p class="text-sm text-red-200" id="errorText"></p>
-                    </div>
-
-                    <div>
-                        <button type="submit" id="loginBtn"
-                            class="flex w-full justify-center rounded-lg bg-primary-500 py-3 px-4 text-sm font-semibold text-white shadow-lg hover:bg-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-400 focus:ring-offset-2 focus:ring-offset-primary-900 transition-all duration-200 disabled:opacity-50">
-                            Masuk
+                    <!-- Submit Button -->
+                    <div class="pt-1">
+                        <button
+                            type="submit"
+                            id="loginBtn"
+                            class="touch-input flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-primary-600 to-primary-500 px-4 text-sm font-semibold text-white shadow-lg transition-all duration-200 hover:from-primary-500 hover:to-primary-400 hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 focus:outline-none focus:ring-2 focus:ring-primary-400 focus:ring-offset-2 focus:ring-offset-slate-900 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-lg"
+                        >
+                            <!-- Loading spinner (hidden by default) -->
+                            <svg id="spinnerIcon" class="hidden h-4 w-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                            </svg>
+                            <span id="btnLabel">Masuk</span>
                         </button>
                     </div>
                 </form>
 
-                <div class="mt-6 text-center">
-                    <p class="text-xs text-primary-300/60">🔒 Akses terbatas — hubungi admin untuk akun baru</p>
+                <!-- Footer note -->
+                <div class="mt-6 border-t border-white/10 pt-5 text-center">
+                    <p class="text-xs text-white/40">
+                        Akses terbatas — hubungi admin untuk akun baru
+                    </p>
                 </div>
             </div>
         </div>
+
+        <!-- Version footer -->
+        <p class="mt-8 text-xs text-white/20">
+            v1.0 &middot; Balmon Kelas II Lampung
+        </p>
     </div>
 
     <script>
-        // Check if already logged in
-        const token = localStorage.getItem('access_token');
-        if (token) {
-            window.location.href = '/dashboard';
-        }
-
-        document.getElementById('loginForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const btn = document.getElementById('loginBtn');
-            const errDiv = document.getElementById('errorMsg');
-            const errText = document.getElementById('errorText');
-
-            btn.disabled = true;
-            btn.textContent = 'Memproses...';
-            errDiv.classList.add('hidden');
-
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
-
-            try {
-                const formData = new URLSearchParams();
-                formData.append('username', username);
-                formData.append('password', password);
-
-                const resp = await fetch('/api/auth/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: formData,
-                });
-
-                const data = await resp.json();
-
-                if (!resp.ok) {
-                    throw new Error(data.detail || 'Login gagal');
-                }
-
-                localStorage.setItem('access_token', data.access_token);
-                localStorage.setItem('user', JSON.stringify(data.user));
+        (function () {
+            /* ── Redirect if already logged in ── */
+            const token = localStorage.getItem('access_token');
+            if (token) {
                 window.location.href = '/dashboard';
-
-            } catch (err) {
-                errText.textContent = err.message;
-                errDiv.classList.remove('hidden');
-            } finally {
-                btn.disabled = false;
-                btn.textContent = 'Masuk';
+                return;
             }
-        });
+
+            /* ── Elements ── */
+            const form   = document.getElementById('loginForm');
+            const btn    = document.getElementById('loginBtn');
+            const label  = document.getElementById('btnLabel');
+            const spinner = document.getElementById('spinnerIcon');
+            const errDiv = document.getElementById('errorMsg');
+            const errTxt = document.getElementById('errorText');
+
+            /* ── Submit handler ── */
+            form.addEventListener('submit', async function (e) {
+                e.preventDefault();
+
+                /* UI → loading */
+                btn.disabled = true;
+                label.textContent = 'Memproses\u2026';
+                spinner.classList.remove('hidden');
+                errDiv.classList.add('hidden');
+
+                const username = document.getElementById('username').value.trim();
+                const password = document.getElementById('password').value;
+
+                try {
+                    const body = new URLSearchParams();
+                    body.append('username', username);
+                    body.append('password', password);
+
+                    const resp = await fetch('/api/auth/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: body,
+                    });
+
+                    const data = await resp.json();
+
+                    if (!resp.ok) {
+                        throw new Error(data.detail || 'Login gagal. Periksa username dan password.');
+                    }
+
+                    /* Store credentials */
+                    localStorage.setItem('access_token', data.access_token);
+                    localStorage.setItem('user', JSON.stringify(data.user));
+
+                    /* Redirect to dashboard */
+                    window.location.href = '/dashboard';
+
+                } catch (err) {
+                    errTxt.textContent = err.message || 'Terjadi kesalahan. Silakan coba lagi.';
+                    errDiv.classList.remove('hidden');
+                } finally {
+                    /* UI → idle */
+                    btn.disabled = false;
+                    label.textContent = 'Masuk';
+                    spinner.classList.add('hidden');
+                }
+            });
+        })();
     </script>
 </body>
 </html>
