@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 GOOGLE_NEWS_RATE_LIMIT_SECONDS = 1
 
 # Fuzzy dedup threshold (word overlap ratio)
-FUZZY_DEDUP_THRESHOLD = 0.7
+FUZZY_DEDUP_THRESHOLD = 0.6
 
 NEWS_QUERIES = {
     "gangguan_telekomunikasi": [
@@ -86,6 +86,51 @@ SEVERITY_KEYWORDS = {
     "medium": ["gangguan", "putus", "padam", "rusak", "terdampak", "banjir"],
     "low": ["perbaikan", "pemeliharaan", "maintenance", "update"],
 }
+
+# ---------------------------------------------------------------------------
+# Negative keywords — filter out irrelevant articles during scraping
+# ---------------------------------------------------------------------------
+NEGATIVE_KEYWORDS = [
+    # Weather forecasts (not disasters)
+    "prakiraan cuaca", "prediksi cuaca", "cuaca hari ini",
+    "cuaca perairan", "ramalan cuaca",
+    # Road damage (infrastructure but not telecom)
+    "jalan rusak", "jembatan putus", "jalan provinsi", "infrastruktur jalan",
+    # Crime
+    "narkotika", "ekstasi", "pembunuhan", "pencurian motor", "penadah motor",
+    # Education
+    "putus sekolah", "siswa tka", "sma terbuka", "infak pendidikan",
+    # Automotive
+    "v-belt", "astra motor",
+    # Politics
+    "pilpres", "partai politik", "bupati lampung tengah kpk",
+    # Non-Lampung national figures
+    "jokowi presiden", "ganjar pranowo", "bali telkom",
+]
+
+
+def _is_negative_match(text: str) -> bool:
+    """Return True if text matches any negative keyword pattern."""
+    text_lower = text.lower()
+    return any(kw in text_lower for kw in NEGATIVE_KEYWORDS)
+
+
+# ---------------------------------------------------------------------------
+# Positive keywords boost — telecom-specific terms that increase relevance
+# ---------------------------------------------------------------------------
+POSITIVE_KEYWORDS_BOOST = [
+    "telkomsel", "indihome", "bts roboh", "kabel putus",
+    "gangguan sinyal", "tower roboh", "jaringan internet down",
+]
+
+
+def _relevance_score(text: str) -> float:
+    """Compute a relevance score (0.0–1.0) based on telecom-specific terms."""
+    text_lower = text.lower()
+    hits = sum(1 for kw in POSITIVE_KEYWORDS_BOOST if kw in text_lower)
+    # 0 hits → 0.0, 1 hit → 0.5, 2+ hits → 1.0
+    return min(hits * 0.5, 1.0)
+
 
 # Kabupaten mapping from text (kept for backward compat; KABUPATEN_ALIASES is the
 # canonical source of truth, see event.py)
@@ -257,7 +302,9 @@ def _word_overlap_ratio(text_a: str, text_b: str) -> float:
 def fuzzy_dedup(new_item: dict, existing_items: list[dict]) -> bool:
     """Return True if *new_item* is a duplicate of any item in *existing_items*.
 
-    Criteria: title word overlap > threshold AND same kabupaten AND within 24 hours.
+    Criteria (any one triggers dedup):
+    - title word overlap > 60% AND same kabupaten AND within 24 hours
+    - same kabupaten AND titles share first 20 characters (prefix match)
     """
     new_title = new_item.get("title", "")
     new_kab = new_item.get("kabupaten")
@@ -281,8 +328,15 @@ def fuzzy_dedup(new_item: dict, existing_items: list[dict]) -> bool:
             # One has time, other doesn't — still allow word comparison
             pass
 
-        # Fuzzy title match
-        similarity = _word_overlap_ratio(new_title, existing.get("title", ""))
+        existing_title = existing.get("title", "")
+
+        # Fast prefix match: same first 20 characters
+        if (new_title.lower()[:20] == existing_title.lower()[:20]
+                and len(new_title) >= 10):
+            return True
+
+        # Fuzzy title match (Jaccard word overlap)
+        similarity = _word_overlap_ratio(new_title, existing_title)
         if similarity > FUZZY_DEDUP_THRESHOLD:
             return True
 
@@ -486,6 +540,10 @@ async def fetch_google_news(query: str, category: str) -> list[dict]:
             if "lampung" not in full_text.lower():
                 continue
 
+            # Filter out irrelevant articles
+            if _is_negative_match(full_text):
+                continue
+
             kab = detect_kabupaten(full_text)
             kec = detect_kecamatan(full_text, kab)
 
@@ -494,6 +552,7 @@ async def fetch_google_news(query: str, category: str) -> list[dict]:
                 "description": summary[:500],
                 "category": detect_category(full_text),
                 "severity": detect_severity(full_text),
+                "relevance_score": _relevance_score(full_text),
                 "source": f"Google News - {source_name}",
                 "source_url": link,
                 "source_id": source_id,
@@ -534,6 +593,10 @@ async def fetch_local_rss(feed_name: str, feed_url: str) -> list[dict]:
             if not any(kw.lower() in full_text for kw in relevant_keywords):
                 continue
 
+            # Filter out irrelevant articles
+            if _is_negative_match(f"{title} {summary}"):
+                continue
+
             pub_date = None
             if hasattr(entry, "published_parsed") and entry.published_parsed:
                 pub_date = datetime(*entry.published_parsed[:6], tzinfo=timezone.utc).astimezone(WIB)
@@ -548,6 +611,7 @@ async def fetch_local_rss(feed_name: str, feed_url: str) -> list[dict]:
                 "description": summary[:500],
                 "category": detect_category(full_text),
                 "severity": detect_severity(full_text),
+                "relevance_score": _relevance_score(f"{title} {summary}"),
                 "source": feed_name,
                 "source_url": entry.get("link", ""),
                 "source_id": source_id,
