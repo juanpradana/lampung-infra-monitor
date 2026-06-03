@@ -37,6 +37,15 @@
             </select>
         </div>
         <div class="col-span-2 sm:flex-1 sm:min-w-[160px]">
+            <label for="filterVerified" class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Verifikasi</label>
+            <select id="filterVerified" class="input select" aria-label="Filter status verifikasi">
+                <option value="">Semua</option>
+                <option value="pending">Pending</option>
+                <option value="confirmed">Confirmed</option>
+                <option value="rejected">Rejected</option>
+            </select>
+        </div>
+        <div class="col-span-2 sm:flex-1 sm:min-w-[160px]">
             <label for="filterSearch" class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Cari</label>
             <input type="text" id="filterSearch" placeholder="Cari insiden..." class="input" aria-label="Cari insiden">
         </div>
@@ -102,29 +111,115 @@
     </div>
 </div>
 
-{# ─── Charts Row: Timeline + Category ────────────────────────────────── #}
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-4 sm:mb-6">
-    <div class="card p-4 sm:p-5">
-        <h3 class="text-base sm:text-lg font-semibold text-gray-800 dark:text-gray-200 mb-3">Timeline</h3>
-        <div class="h-48 sm:h-64"><canvas id="timelineChart"></canvas></div>
+{# ─── Lampung Map + Timeline Chart ───────────────────────────────────── #}
+<div class="grid grid-cols-1 lg:grid-cols-5 gap-4 sm:gap-6 mb-4 sm:mb-6">
+    {# ─── Interactive Map ─────────────────────────────────────────── #}
+    <div class="card p-4 sm:p-5 lg:col-span-3">
+        <h3 class="text-base sm:text-lg font-semibold text-gray-800 dark:text-gray-200 mb-3">Peta Sebaran Lampung</h3>
+        <div class="relative" style="min-height: 380px;">
+            <svg id="lampungMap" viewBox="0 0 520 480" class="w-full h-auto" style="max-height: 420px;">
+                <defs>
+                    <filter id="mapShadow" x="-2%" y="-2%" width="104%" height="104%">
+                        <feDropShadow dx="0" dy="1" stdDeviation="1.5" flood-opacity="0.15"/>
+                    </filter>
+                </defs>
+
+                <!-- Pesisir Barat -->
+                <path id="map-pesisir-barat" class="map-region" data-kab="Pesisir Barat"
+                    d="M18,82 L48,72 58,98 62,138 65,178 68,218 66,258 58,292 48,318 34,338 18,332 10,305 6,272 4,238 4,205 6,168 9,132 12,102Z"/>
+                <!-- Lampung Barat -->
+                <path id="map-lampung-barat" class="map-region" data-kab="Lampung Barat"
+                    d="M58,98 L98,82 132,86 152,102 158,132 150,160 136,182 116,194 96,198 80,190 70,178 65,158 62,138Z"/>
+                <!-- Lampung Utara -->
+                <path id="map-lampung-utara" class="map-region" data-kab="Lampung Utara"
+                    d="M132,86 L172,68 222,58 268,62 292,80 288,108 272,124 248,134 222,138 198,132 175,122 152,102Z"/>
+                <!-- Way Kanan -->
+                <path id="map-way-kanan" class="map-region" data-kab="Way Kanan"
+                    d="M268,62 L312,50 368,40 418,50 448,70 450,100 440,128 420,138 398,134 372,124 348,112 322,100 292,82Z"/>
+                <!-- Mesuji -->
+                <path id="map-mesuji" class="map-region" data-kab="Mesuji"
+                    d="M448,70 L476,60 506,65 520,85 522,118 518,148 506,170 490,180 472,182 456,170 448,142 450,100Z"/>
+                <!-- Tulang Bawang -->
+                <path id="map-tulang-bawang" class="map-region" data-kab="Tulang Bawang"
+                    d="M398,134 L420,138 440,128 450,142 456,170 452,200 438,215 416,222 398,218 386,200 382,180 388,158Z"/>
+                <!-- Tulang Bawang Barat -->
+                <path id="map-tulang-bawang-barat" class="map-region" data-kab="Tulang Bawang Barat"
+                    d="M248,134 L272,124 288,108 292,82 322,100 348,112 352,134 346,160 332,172 316,178 296,172 276,162 260,150Z"/>
+                <!-- Lampung Timur -->
+                <path id="map-lampung-timur" class="map-region" data-kab="Lampung Timur"
+                    d="M332,172 L346,160 352,134 372,124 398,134 388,158 382,180 386,200 398,218 416,222 426,250 416,280 396,290 370,284 350,274 336,254 330,228 328,202Z"/>
+                <!-- Lampung Tengah -->
+                <path id="map-lampung-tengah" class="map-region" data-kab="Lampung Tengah"
+                    d="M96,198 L116,194 136,182 150,184 176,192 206,198 236,204 266,210 294,216 316,214 328,202 330,228 328,252 312,266 288,276 260,282 230,284 200,280 172,272 150,258 130,242 110,222Z"/>
+                <!-- Metro -->
+                <path id="map-metro" class="map-region" data-kab="Metro"
+                    d="M202,230 L222,224 238,234 236,252 220,258 204,252 198,242Z"/>
+                <!-- Tanggamus -->
+                <path id="map-tanggamus" class="map-region" data-kab="Tanggamus"
+                    d="M34,338 L48,318 58,292 74,288 98,292 128,298 156,306 166,318 160,342 148,358 130,368 108,375 84,372 60,362 40,348Z"/>
+                <!-- Pesawaran -->
+                <path id="map-pesawaran" class="map-region" data-kab="Pesawaran"
+                    d="M166,318 L188,310 210,304 234,300 256,294 274,300 266,320 256,338 240,348 220,354 198,348 180,338Z"/>
+                <!-- Pringsewu -->
+                <path id="map-pringsewu" class="map-region" data-kab="Pringsewu"
+                    d="M172,272 L200,280 230,284 260,282 278,288 278,300 274,300 256,294 234,300 210,304 188,310 166,318 160,300 160,284Z"/>
+                <!-- Bandar Lampung -->
+                <path id="map-bandar-lampung" class="map-region" data-kab="Bandar Lampung"
+                    d="M316,302 L336,294 356,300 362,320 352,340 336,346 316,344 304,330 302,314Z"/>
+                <!-- Lampung Selatan -->
+                <path id="map-lampung-selatan" class="map-region" data-kab="Lampung Selatan"
+                    d="M274,300 L294,304 302,314 304,330 316,344 336,346 352,356 362,372 352,388 332,398 308,404 284,400 260,390 244,378 240,362 240,348 256,338Z"/>
+
+                <!-- Region labels (will be positioned by JS) -->
+                <g id="mapLabels" font-size="10" font-family="Inter, sans-serif" font-weight="600" pointer-events="none">
+                </g>
+            </svg>
+
+            <!-- Map tooltip -->
+            <div id="mapTooltip" class="absolute hidden pointer-events-none z-50 px-3 py-2 rounded-lg text-xs font-medium shadow-lg border"
+                style="background: var(--surface); border-color: var(--border); color: var(--ink);">
+            </div>
+
+            <!-- Legend -->
+            <div class="flex items-center gap-2 mt-3 text-xs text-gray-500 dark:text-gray-400">
+                <span>Sedikit</span>
+                <div class="flex gap-0.5">
+                    <span class="inline-block w-5 h-3 rounded" style="background: #dbeafe;"></span>
+                    <span class="inline-block w-5 h-3 rounded" style="background: #93c5fd;"></span>
+                    <span class="inline-block w-5 h-3 rounded" style="background: #3b82f6;"></span>
+                    <span class="inline-block w-5 h-3 rounded" style="background: #1d4ed8;"></span>
+                    <span class="inline-block w-5 h-3 rounded" style="background: #1e3a8a;"></span>
+                </div>
+                <span>Banyak</span>
+                <span class="ml-auto text-gray-400 dark:text-gray-500" id="mapTotalEvents">-</span>
+            </div>
+        </div>
     </div>
+
+    {# ─── Timeline Chart (Stacked Bar) ────────────────────────────── #}
+    <div class="card p-4 sm:p-5 lg:col-span-2">
+        <h3 class="text-base sm:text-lg font-semibold text-gray-800 dark:text-gray-200 mb-3">Timeline Harian</h3>
+        <div style="height: 380px;"><canvas id="timelineChart"></canvas></div>
+    </div>
+</div>
+
+{# ─── Charts Row: Category + Severity ────────────────────────────────── #}
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-4 sm:mb-6">
     <div class="card p-4 sm:p-5">
         <h3 class="text-base sm:text-lg font-semibold text-gray-800 dark:text-gray-200 mb-3">Kategori</h3>
         <div class="h-48 sm:h-64"><canvas id="categoryChart"></canvas></div>
     </div>
-</div>
-
-{# ─── Second Row: Top Locations + Severity ────────────────────────────── #}
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-4 sm:mb-6">
-    <div class="card p-4 sm:p-5">
-        <h3 class="text-base sm:text-lg font-semibold text-gray-800 dark:text-gray-200 mb-3">Top Lokasi</h3>
-        <div id="locationList" class="space-y-2 sm:space-y-3">
-            <p class="text-gray-400 dark:text-gray-500 text-sm">Memuat...</p>
-        </div>
-    </div>
     <div class="card p-4 sm:p-5">
         <h3 class="text-base sm:text-lg font-semibold text-gray-800 dark:text-gray-200 mb-3">Severity</h3>
         <div class="h-40 sm:h-48"><canvas id="severityChart"></canvas></div>
+    </div>
+</div>
+
+{# ─── Top Locations ──────────────────────────────────────────────────── #}
+<div class="card p-4 sm:p-5 mb-4 sm:mb-6">
+    <h3 class="text-base sm:text-lg font-semibold text-gray-800 dark:text-gray-200 mb-3">Top Lokasi</h3>
+    <div id="locationList" class="space-y-2 sm:space-y-3">
+        <p class="text-gray-400 dark:text-gray-500 text-sm">Memuat...</p>
     </div>
 </div>
 
@@ -143,12 +238,13 @@
                     <th scope="col">Lokasi</th>
                     <th scope="col">Kategori</th>
                     <th scope="col">Severity</th>
+                    <th scope="col">Verifikasi</th>
                     <th scope="col">Sumber</th>
                     <th scope="col">Status</th>
                 </tr>
             </thead>
             <tbody id="eventsTable">
-                <tr><td colspan="7" class="px-4 py-8 text-center text-gray-400 dark:text-gray-500">Memuat...</td></tr>
+                <tr><td colspan="8" class="px-4 py-8 text-center text-gray-400 dark:text-gray-500">Memuat...</td></tr>
             </tbody>
         </table>
     </div>
@@ -201,21 +297,48 @@
 let currentPage = 1;
 let totalPages = 1;
 let timelineChart, categoryChart, severityChart;
+let locationData = []; /* cache for map coloring */
 
 const CATEGORY_LABELS = {'gangguan_telekomunikasi':'Telkom','gangguan_bts':'BTS','gangguan_fiber':'Fiber','gangguan_microwave':'Microwave','gangguan_internet':'Internet','gangguan_listrik':'Listrik','bencana':'Bencana','cuaca_ekstrem':'Cuaca','lainnya':'Lainnya'};
+const CATEGORY_COLORS = {
+    'gangguan_telekomunikasi':'#3b82f6','gangguan_bts':'#0ea5e9','gangguan_fiber':'#06b6d4',
+    'gangguan_microwave':'#14b8a6','gangguan_internet':'#f59e0b','gangguan_listrik':'#ef4444',
+    'bencana':'#8b5cf6','cuaca_ekstrem':'#64748b','lainnya':'#94a3b8'
+};
 const SEVERITY_COLORS = {'critical':'#ef4444','high':'#f97316','medium':'#eab308','low':'#22c55e'};
 const STATUS_BADGES = {'active':'badge badge-active','monitoring':'badge badge-monitoring','resolved':'badge badge-resolved','closed':'badge badge-closed'};
 const SEV_BADGES = {'critical':'badge badge-critical','high':'badge badge-high','medium':'badge badge-medium','low':'badge badge-low'};
+const VERIF_BADGES = {'pending':'badge badge-monitoring','confirmed':'badge badge-resolved','rejected':'badge badge-active'};
+
+/* Heat map color scale for the map */
+const MAP_COLORS = ['#dbeafe','#93c5fd','#3b82f6','#1d4ed8','#1e3a8a'];
+
+function getActiveVerified() {
+    return document.getElementById('filterVerified').value || '';
+}
+
+function buildApiQS(extra) {
+    const days = document.getElementById('filterDays').value;
+    const vs = getActiveVerified();
+    const p = new URLSearchParams({ days });
+    if (vs) p.set('verified_status', vs);
+    if (extra) Object.entries(extra).forEach(([k,v]) => { if (v) p.set(k, v); });
+    return p.toString();
+}
 
 async function loadDashboard() {
     const days = document.getElementById('filterDays').value;
     document.getElementById('statPeriod').textContent = days == 1 ? 'Hari ini' : days + ' hari';
-    await Promise.all([loadStats(days), loadTimeline(days), loadCategories(days), loadLocations(days), loadEvents(), loadMonitorLogs(), loadKabupatenList()]);
+    await Promise.all([
+        loadStats(days), loadTimeline(days), loadCategories(days),
+        loadLocations(days), loadEvents(), loadMonitorLogs(), loadKabupatenList()
+    ]);
 }
 
+/* ── Stats ── */
 async function loadStats(days) {
     try {
-        const data = await apiGet('/api/dashboard/stats?days=' + days);
+        const data = await apiGet('/api/dashboard/stats?' + buildApiQS());
         document.getElementById('statTotal').textContent = data.total_events;
         document.getElementById('statActive').textContent = data.active_events;
         document.getElementById('statToday').textContent = data.today_events;
@@ -224,64 +347,225 @@ async function loadStats(days) {
     } catch(e) { console.error(e); }
 }
 
+/* ── Timeline (stacked bar by category) ── */
 async function loadTimeline(days) {
     try {
-        const data = await apiGet('/api/dashboard/timeline?days=' + days);
+        const data = await apiGet('/api/dashboard/timeline?' + buildApiQS());
         const t = data.timeline || [];
+        if (!t.length) { if (timelineChart) timelineChart.destroy(); return; }
+
+        /* Collect all categories present in the data */
+        const allCats = new Set();
+        t.forEach(d => Object.keys(d.categories || {}).forEach(c => allCats.add(c)));
+        const cats = [...allCats].sort();
+
+        const labels = t.map(x => x.date);
+        const isDark = document.documentElement.classList.contains('dark');
+        const gridColor = isDark ? '#334155' : '#f1f5f9';
+        const labelColor = isDark ? '#94a3b8' : '#475569';
+
+        const datasets = cats.map(cat => ({
+            label: CATEGORY_LABELS[cat] || cat,
+            data: t.map(d => (d.categories || {})[cat] || 0),
+            backgroundColor: CATEGORY_COLORS[cat] || '#94a3b8',
+            borderRadius: 2,
+            borderSkipped: false,
+        }));
+
         if (timelineChart) timelineChart.destroy();
         timelineChart = new Chart(document.getElementById('timelineChart').getContext('2d'), {
-            type: 'line',
-            data: { labels: t.map(x=>x.date), datasets: [{ label: 'Insiden', data: t.map(x=>x.total), borderColor: getComputedStyle(document.documentElement).getPropertyValue('--brand-500').trim() || '#3b82f6', backgroundColor: (getComputedStyle(document.documentElement).getPropertyValue('--brand-500').trim() || '#3b82f6') + '1a', fill: true, tension: 0.3, pointBackgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--brand-500').trim() || '#3b82f6', pointBorderColor: '#fff', pointBorderWidth: 2, pointRadius: 3 }] },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: getComputedStyle(document.documentElement).getPropertyValue('--border-light').trim() || '#f1f5f9' } }, x: { grid: { display: false } } } }
+            type: 'bar',
+            data: { labels, datasets },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { color: labelColor, padding: 10, font: { size: 10 }, boxWidth: 12, boxHeight: 12, usePointStyle: true, pointStyle: 'rectRounded' }
+                    },
+                    tooltip: { mode: 'index', intersect: false }
+                },
+                scales: {
+                    x: { stacked: true, grid: { display: false }, ticks: { color: labelColor, font: { size: 10 }, maxRotation: 45, autoSkip: true, maxTicksLimit: 15 } },
+                    y: { stacked: true, beginAtZero: true, ticks: { stepSize: 1, color: labelColor }, grid: { color: gridColor } }
+                }
+            }
         });
     } catch(e) { console.error(e); }
 }
 
+/* ── Categories (doughnut) ── */
 async function loadCategories(days) {
     try {
-        const data = await apiGet('/api/dashboard/by-category?days=' + days);
+        const data = await apiGet('/api/dashboard/by-category?' + buildApiQS());
         const c = data.categories || [];
         if (categoryChart) categoryChart.destroy();
+        const isDark = document.documentElement.classList.contains('dark');
         categoryChart = new Chart(document.getElementById('categoryChart').getContext('2d'), {
             type: 'doughnut',
-            data: { labels: c.map(x=>CATEGORY_LABELS[x.category]||x.category), datasets: [{ data: c.map(x=>x.count), backgroundColor: ['#3b82f6','#0ea5e9','#06b6d4','#14b8a6','#f59e0b','#ef4444','#8b5cf6','#64748b','#94a3b8'], borderColor: getComputedStyle(document.documentElement).getPropertyValue('--surface').trim() || '#ffffff', borderWidth: 2 }] },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: getComputedStyle(document.documentElement).getPropertyValue('--ink-secondary').trim() || '#475569', padding: 12, font: { size: 11 } } } } }
+            data: {
+                labels: c.map(x => CATEGORY_LABELS[x.category] || x.category),
+                datasets: [{
+                    data: c.map(x => x.count),
+                    backgroundColor: c.map(x => CATEGORY_COLORS[x.category] || '#94a3b8'),
+                    borderColor: isDark ? '#1e293b' : '#ffffff',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom', labels: { color: isDark ? '#94a3b8' : '#475569', padding: 12, font: { size: 11 } } } }
+            }
         });
     } catch(e) { console.error(e); }
 }
 
+/* ── Locations (bars + map) ── */
 async function loadLocations(days) {
     try {
-        const data = await apiGet('/api/dashboard/by-location?days=' + days);
+        const data = await apiGet('/api/dashboard/by-location?' + buildApiQS());
         const locs = data.locations || [];
+        locationData = locs;
         const el = document.getElementById('locationList');
-        if (!locs.length) { el.innerHTML = '<p class="text-gray-400 dark:text-gray-500 text-sm">Tidak ada data</p>'; return; }
+        if (!locs.length) { el.innerHTML = '<p class="text-gray-400 dark:text-gray-500 text-sm">Tidak ada data</p>'; updateMapColors({}); return; }
         const mx = locs[0]?.total || 1;
-        el.innerHTML = locs.slice(0,8).map(l =>
+        el.innerHTML = locs.slice(0, 10).map(l =>
             '<div class="flex items-center gap-2 sm:gap-3">' +
-            '<span class="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 w-24 sm:w-32 truncate">' + l.kabupaten + '</span>' +
+            '<span class="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 w-28 sm:w-36 truncate">' + l.kabupaten + '</span>' +
             '<div class="flex-1 bg-gray-100 dark:bg-slate-700 rounded-full h-4 sm:h-5 overflow-hidden">' +
-            '<div class="h-full rounded-full flex items-center justify-end pr-1 sm:pr-2 text-xs text-white font-medium" style="width:' + (l.total/mx*100) + '%;background:var(--brand-500);">' + l.total + '</div></div></div>'
+            '<div class="h-full rounded-full flex items-center justify-end pr-1 sm:pr-2 text-xs text-white font-medium" style="width:' + (l.total / mx * 100) + '%;background:var(--brand-500);">' + l.total + '</div></div></div>'
         ).join('');
+
+        /* Update map coloring */
+        const kabMap = {};
+        locs.forEach(l => { kabMap[l.kabupaten] = l.total; });
+        updateMapColors(kabMap);
     } catch(e) { console.error(e); }
 }
 
+/* ── Severity chart ── */
 function renderSeverityChart(s) {
-    const keys = ['critical','high','medium','low'];
+    const keys = ['critical', 'high', 'medium', 'low'];
     if (severityChart) severityChart.destroy();
+    const isDark = document.documentElement.classList.contains('dark');
+    const labelColor = isDark ? '#94a3b8' : '#475569';
+    const gridColor = isDark ? '#334155' : '#f1f5f9';
     severityChart = new Chart(document.getElementById('severityChart').getContext('2d'), {
         type: 'bar',
-        data: { labels: ['Critical','High','Medium','Low'], datasets: [{ data: keys.map(k=>s[k]||0), backgroundColor: keys.map(k=>SEVERITY_COLORS[k]), borderRadius: 4, borderSkipped: false }] },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: getComputedStyle(document.documentElement).getPropertyValue('--border-light').trim() || '#f1f5f9' } }, x: { grid: { display: false } } } }
+        data: { labels: ['Critical', 'High', 'Medium', 'Low'], datasets: [{ data: keys.map(k => s[k] || 0), backgroundColor: keys.map(k => SEVERITY_COLORS[k]), borderRadius: 4, borderSkipped: false }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1, color: labelColor }, grid: { color: gridColor } }, x: { ticks: { color: labelColor }, grid: { display: false } } } }
     });
 }
 
-function makeSourceLink(source, url) {
-    if (!url) return '<span class="text-xs text-gray-500 dark:text-gray-400">' + (source||'-') + '</span>';
-    const display = (source || 'Sumber').replace(/^Google News - /, '').substring(0, 30);
-    return '<a href="' + url + '" target="_blank" rel="noopener" class="source-link" title="' + (source||'') + '">' + display + ' <svg class="w-3 h-3 inline" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><path d="M7 7h10v10"/></svg></a>';
+/* ═══════════════════════════════════════════════════════════════════════
+   MAP — coloring + tooltip
+   ═══════════════════════════════════════════════════════════════════════ */
+function updateMapColors(kabCounts) {
+    const counts = Object.values(kabCounts);
+    const maxCount = Math.max(...counts, 1);
+    let totalEvt = 0;
+
+    document.querySelectorAll('.map-region').forEach(path => {
+        const kab = path.getAttribute('data-kab');
+        const count = kabCounts[kab] || 0;
+        totalEvt += count;
+        const ratio = count / maxCount;
+        let colorIdx;
+        if (count === 0) colorIdx = 0;
+        else if (ratio < 0.25) colorIdx = 0;
+        else if (ratio < 0.5) colorIdx = 1;
+        else if (ratio < 0.75) colorIdx = 2;
+        else if (ratio < 0.9) colorIdx = 3;
+        else colorIdx = 4;
+        path.style.fill = MAP_COLORS[colorIdx];
+        path.style.transition = 'fill 0.3s ease';
+    });
+    document.getElementById('mapTotalEvents').textContent = totalEvt + ' insiden';
 }
 
+/* Map tooltip & label positioning */
+(function initMap() {
+    const tooltip = document.getElementById('mapTooltip');
+    const svg = document.getElementById('lampungMap');
+    const labelsG = document.getElementById('mapLabels');
+
+    /* Position labels at each path centroid */
+    document.querySelectorAll('.map-region').forEach(path => {
+        const bbox = path.getBBox();
+        const cx = bbox.x + bbox.width / 2;
+        const cy = bbox.y + bbox.height / 2;
+        const kab = path.getAttribute('data-kab');
+        /* Abbreviate long names for labels */
+        const shortNames = {
+            'Pesisir Barat': 'Pesbar', 'Lampung Barat': 'Lambar', 'Lampung Utara': 'Lampura',
+            'Lampung Timur': 'Lamtim', 'Lampung Tengah': 'Lamteng', 'Lampung Selatan': 'Lamsel',
+            'Tulang Bawang': 'Tuba', 'Tulang Bawang Barat': 'Tubabar', 'Way Kanan': 'Waykan',
+            'Bandar Lampung': 'Balam', 'Pesawaran': 'Pesawaran', 'Pringsewu': 'Pringsewu',
+            'Tanggamus': 'Tanggamus', 'Mesuji': 'Mesuji', 'Metro': 'Metro'
+        };
+        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        text.setAttribute('x', cx);
+        text.setAttribute('y', cy + 1);
+        text.setAttribute('text-anchor', 'middle');
+        text.setAttribute('dominant-baseline', 'middle');
+        text.setAttribute('fill', '#374151');
+        text.setAttribute('font-size', bbox.width < 60 ? '8' : '10');
+        text.textContent = shortNames[kab] || kab;
+        labelsG.appendChild(text);
+    });
+
+    /* Hover events */
+    document.querySelectorAll('.map-region').forEach(path => {
+        path.addEventListener('mouseenter', function(e) {
+            const kab = this.getAttribute('data-kab');
+            const loc = locationData.find(l => l.kabupaten === kab);
+            const count = loc ? loc.total : 0;
+            tooltip.innerHTML = '<strong>' + kab + '</strong><br>' + count + ' insiden';
+            tooltip.classList.remove('hidden');
+            this.style.opacity = '0.85';
+            this.style.cursor = 'pointer';
+            /* Bring to front */
+            this.parentNode.appendChild(this);
+        });
+
+        path.addEventListener('mousemove', function(e) {
+            const rect = svg.getBoundingClientRect();
+            const x = e.clientX - rect.left + 12;
+            const y = e.clientY - rect.top - 10;
+            tooltip.style.left = x + 'px';
+            tooltip.style.top = y + 'px';
+        });
+
+        path.addEventListener('mouseleave', function() {
+            tooltip.classList.add('hidden');
+            this.style.opacity = '1';
+            /* Reset z-order by re-appending labels */
+            this.parentNode.insertBefore(labelsG, this.nextSibling);
+        });
+    });
+
+    /* Dark mode label color adjustment */
+    function adjustLabelColors() {
+        const isDark = document.documentElement.classList.contains('dark');
+        labelsG.querySelectorAll('text').forEach(t => {
+            t.setAttribute('fill', isDark ? '#e2e8f0' : '#374151');
+        });
+    }
+    adjustLabelColors();
+    const observer = new MutationObserver(adjustLabelColors);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+})();
+
+/* ── Source link helper ── */
+function makeSourceLink(source, url) {
+    if (!url) return '<span class="text-xs text-gray-500 dark:text-gray-400">' + (source || '-') + '</span>';
+    const display = (source || 'Sumber').replace(/^Google News - /, '').substring(0, 30);
+    return '<a href="' + url + '" target="_blank" rel="noopener" class="source-link" title="' + (source || '') + '">' + display + ' <svg class="w-3 h-3 inline" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><path d="M7 7h10v10"/></svg></a>';
+}
+
+/* ── Events ── */
 async function loadEvents() {
     try {
         const p = new URLSearchParams({ page: currentPage, per_page: 20 });
@@ -289,63 +573,68 @@ async function loadEvents() {
         const kab = document.getElementById('filterKabupaten').value;
         const cat = document.getElementById('filterCategory').value;
         const q = document.getElementById('filterSearch').value;
+        const vs = getActiveVerified();
         if (days) p.set('date_from', new Date(Date.now() - days * 86400000).toISOString());
         if (kab) p.set('kabupaten', kab);
         if (cat) p.set('category', cat);
+        if (vs) p.set('verified_status', vs);
         if (q) p.set('search', q);
 
         const data = await apiGet('/api/events?' + p);
         totalPages = data.pages;
 
-        // Desktop table
+        /* Desktop table */
         document.getElementById('eventCount').textContent = data.total + ' insiden';
         document.getElementById('pageInfo').textContent = data.page + '/' + data.pages;
         document.getElementById('prevPage').disabled = data.page <= 1;
         document.getElementById('nextPage').disabled = data.page >= data.pages;
 
-        // Mobile cards
+        /* Mobile cards */
         document.getElementById('eventCountMobile').textContent = data.total + ' insiden';
         document.getElementById('pageInfoMobile').textContent = data.page + '/' + data.pages;
         document.getElementById('prevPageMobile').disabled = data.page <= 1;
         document.getElementById('nextPageMobile').disabled = data.page >= data.pages;
 
         if (!data.events.length) {
-            document.getElementById('eventsTable').innerHTML = '<tr><td colspan="7" class="px-4 py-8 text-center text-gray-400 dark:text-gray-500">Tidak ada data</td></tr>';
+            document.getElementById('eventsTable').innerHTML = '<tr><td colspan="8" class="px-4 py-8 text-center text-gray-400 dark:text-gray-500">Tidak ada data</td></tr>';
             document.getElementById('eventsCards').innerHTML = '<p class="p-4 text-center text-gray-400 dark:text-gray-500 text-sm">Tidak ada data</p>';
             return;
         }
 
-        // Desktop rows
+        const verifLabels = { pending: 'Pending', confirmed: 'Confirmed', rejected: 'Rejected' };
+
+        /* Desktop rows */
         document.getElementById('eventsTable').innerHTML = data.events.map(e => {
-            const d = e.created_at ? new Date(e.created_at).toLocaleDateString('id-ID',{day:'2-digit',month:'short'}) : '-';
+            const d = e.created_at ? new Date(e.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short' }) : '-';
             const loc = [e.kabupaten, e.kecamatan].filter(Boolean).join(', ') || '-';
             return '<tr>' +
                 '<td class="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">' + d + '</td>' +
                 '<td class="text-sm font-medium text-gray-900 dark:text-gray-100 max-w-[200px] truncate">' + e.title + '</td>' +
                 '<td class="text-xs text-gray-600 dark:text-gray-400">' + loc + '</td>' +
-                '<td class="text-xs">' + (CATEGORY_LABELS[e.category]||e.category) + '</td>' +
-                '<td><span class="' + (SEV_BADGES[e.severity]||'') + '">' + e.severity + '</span></td>' +
+                '<td class="text-xs">' + (CATEGORY_LABELS[e.category] || e.category) + '</td>' +
+                '<td><span class="' + (SEV_BADGES[e.severity] || '') + '">' + e.severity + '</span></td>' +
+                '<td><span class="' + (VERIF_BADGES[e.verified_status] || '') + '">' + (verifLabels[e.verified_status] || e.verified_status || '-') + '</span></td>' +
                 '<td>' + makeSourceLink(e.source, e.source_url) + '</td>' +
-                '<td><span class="' + (STATUS_BADGES[e.status]||'') + '">' + e.status + '</span></td>' +
+                '<td><span class="' + (STATUS_BADGES[e.status] || '') + '">' + e.status + '</span></td>' +
                 '</tr>';
         }).join('');
 
-        // Mobile cards
+        /* Mobile cards */
         document.getElementById('eventsCards').innerHTML = data.events.map(e => {
-            const d = e.created_at ? new Date(e.created_at).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'}) : '-';
+            const d = e.created_at ? new Date(e.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '-';
             const loc = [e.kabupaten, e.kecamatan].filter(Boolean).join(', ') || '-';
             const src = makeSourceLink(e.source, e.source_url);
             return '<div class="event-card">' +
                 '<div class="flex items-start justify-between gap-2 mb-1">' +
                     '<span class="text-xs text-gray-500 dark:text-gray-400">' + d + '</span>' +
                     '<div class="flex gap-1">' +
-                        '<span class="' + (SEV_BADGES[e.severity]||'') + '">' + e.severity + '</span>' +
-                        '<span class="' + (STATUS_BADGES[e.status]||'') + '">' + e.status + '</span>' +
+                        '<span class="' + (SEV_BADGES[e.severity] || '') + '">' + e.severity + '</span>' +
+                        '<span class="' + (VERIF_BADGES[e.verified_status] || '') + '">' + (verifLabels[e.verified_status] || '-') + '</span>' +
                     '</div>' +
                 '</div>' +
                 '<p class="text-sm font-medium text-gray-900 dark:text-gray-100 leading-snug mb-1">' + e.title + '</p>' +
                 '<div class="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">' +
-                    '<span>' + loc + ' &middot; ' + (CATEGORY_LABELS[e.category]||e.category) + '</span>' +
+                    '<span>' + loc + ' &middot; ' + (CATEGORY_LABELS[e.category] || e.category) + '</span>' +
                     src +
                 '</div>' +
                 '</div>';
@@ -354,6 +643,7 @@ async function loadEvents() {
     } catch(e) { console.error(e); }
 }
 
+/* ── Monitor Logs ── */
 async function loadMonitorLogs() {
     try {
         const data = await apiGet('/api/dashboard/monitoring-logs?limit=5');
@@ -377,24 +667,45 @@ async function loadMonitorLogs() {
     } catch(e) { console.error(e); }
 }
 
+/* ── Kabupaten list ── */
 async function loadKabupatenList() {
     try {
         const data = await apiGet('/api/admin/locations');
         const sel = document.getElementById('filterKabupaten');
         const cur = sel.value;
         sel.innerHTML = '<option value="">Semua</option>';
-        Object.keys(data.locations||{}).sort().forEach(k => { sel.innerHTML += '<option value="'+k+'">'+k+'</option>'; });
+        Object.keys(data.locations || {}).sort().forEach(k => { sel.innerHTML += '<option value="' + k + '">' + k + '</option>'; });
         sel.value = cur;
     } catch(e) { console.error(e); }
 }
 
+/* ── Pagination ── */
 function changePage(d) { currentPage = Math.max(1, Math.min(totalPages, currentPage + d)); loadEvents(); }
 
+/* ── Event listeners ── */
 setInterval(loadDashboard, 300000);
-document.getElementById('filterDays').addEventListener('change', () => { currentPage=1; loadDashboard(); });
-document.getElementById('filterKabupaten').addEventListener('change', () => { currentPage=1; loadEvents(); });
-document.getElementById('filterCategory').addEventListener('change', () => { currentPage=1; loadEvents(); });
-document.getElementById('filterSearch').addEventListener('keyup', debounce(() => { currentPage=1; loadEvents(); }, 500));
+document.getElementById('filterDays').addEventListener('change', () => { currentPage = 1; loadDashboard(); });
+document.getElementById('filterKabupaten').addEventListener('change', () => { currentPage = 1; loadEvents(); });
+document.getElementById('filterCategory').addEventListener('change', () => { currentPage = 1; loadEvents(); });
+document.getElementById('filterVerified').addEventListener('change', () => { currentPage = 1; loadDashboard(); });
+document.getElementById('filterSearch').addEventListener('keyup', debounce(() => { currentPage = 1; loadEvents(); }, 500));
 document.addEventListener('DOMContentLoaded', loadDashboard);
 </script>
+
+<style>
+/* ── Map region styles ── */
+.map-region {
+    fill: #dbeafe;
+    stroke: var(--surface, #ffffff);
+    stroke-width: 1.5;
+    transition: opacity 0.2s ease, filter 0.2s ease;
+}
+.map-region:hover {
+    filter: brightness(0.92);
+    cursor: pointer;
+}
+.dark .map-region {
+    stroke: #1e293b;
+}
+</style>
 {% endblock %}

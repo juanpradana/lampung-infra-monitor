@@ -11,8 +11,9 @@ import feedparser
 from html import unescape
 import re
 
-# Import LAMPUNG_LOCATIONS from event model for kecamatan detection
-from backend.models.event import LAMPUNG_LOCATIONS
+# Import LAMPUNG_LOCATIONS, KABUPATEN_ALIASES, KECAMATAN_TO_KABUPATEN from event model
+from backend.models.event import LAMPUNG_LOCATIONS, KABUPATEN_ALIASES, KECAMATAN_TO_KABUPATEN
+from difflib import get_close_matches
 
 logger = logging.getLogger(__name__)
 
@@ -86,30 +87,43 @@ SEVERITY_KEYWORDS = {
     "low": ["perbaikan", "pemeliharaan", "maintenance", "update"],
 }
 
-# Kabupaten mapping from text
+# Kabupaten mapping from text (kept for backward compat; KABUPATEN_ALIASES is the
+# canonical source of truth, see event.py)
 KABUPATEN_KEYWORDS = {
     "bandar lampung": "Bandar Lampung",
     "kota bandar lampung": "Bandar Lampung",
+    "bandarlampung": "Bandar Lampung",
+    "kota bandarlampung": "Bandar Lampung",
+    "balam": "Bandar Lampung",
     "metro": "Metro",
     "lampung selatan": "Lampung Selatan",
     "lam sel": "Lampung Selatan",
+    "lamsel": "Lampung Selatan",
     "lampung tengah": "Lampung Tengah",
     "lam teng": "Lampung Tengah",
+    "lamteng": "Lampung Tengah",
     "lampung utara": "Lampung Utara",
     "lam utara": "Lampung Utara",
+    "lampura": "Lampung Utara",
     "lampung timur": "Lampung Timur",
     "lam tim": "Lampung Timur",
+    "lamtim": "Lampung Timur",
     "lampung barat": "Lampung Barat",
     "lam bar": "Lampung Barat",
+    "lambar": "Lampung Barat",
     "tanggamus": "Tanggamus",
+    "tenggamus": "Tanggamus",
     "tulang bawang barat": "Tulang Bawang Barat",
+    "tubabar": "Tulang Bawang Barat",
     "tulang bawang": "Tulang Bawang",
     "way kanan": "Way Kanan",
     "pesawaran": "Pesawaran",
     "pringsewu": "Pringsewu",
     "mesuji": "Mesuji",
     "pesisir barat": "Pesisir Barat",
+    "pesbar": "Pesisir Barat",
     "krui": "Pesisir Barat",
+    # Kecamatan-level → kabupaten (common city names)
     "kalianda": "Lampung Selatan",
     "kotabumi": "Lampung Utara",
     "sukadana": "Lampung Timur",
@@ -117,9 +131,90 @@ KABUPATEN_KEYWORDS = {
     "menggala": "Tulang Bawang",
     "blambangan umpu": "Way Kanan",
     "gedong tataan": "Pesawaran",
-    "pringsewu": "Pringsewu",
-    "mesuji": "Mesuji",
+    "gunung sugih": "Lampung Tengah",
+    "terbanggi besar": "Lampung Tengah",
+    "kota gajah": "Lampung Tengah",
+    "natar": "Lampung Selatan",
+    "penengahan": "Lampung Selatan",
+    "bakauheni": "Lampung Selatan",
+    "ketapang": "Lampung Selatan",
+    "tanjung bintang": "Lampung Selatan",
+    "panjang": "Bandar Lampung",
+    "way kandis": "Bandar Lampung",
+    "way halim": "Bandar Lampung",
+    "tanjung karang": "Bandar Lampung",
+    "teluk betung": "Bandar Lampung",
+    "kedamaian": "Bandar Lampung",
+    "rajabasa": "Lampung Selatan",
+    "kota agung": "Tanggamus",
+    "kotaagung": "Tanggamus",
 }
+
+
+def _normalize_location_token(text: str) -> str:
+    """Collapse whitespace and strip for matching."""
+    return re.sub(r"\s+", " ", text).strip()
+
+
+def detect_kabupaten(text: str) -> Optional[str]:
+    """Detect kabupaten/kota from text.
+
+    Strategy (in order):
+    1. Exact substring match via KABUPATEN_KEYWORDS (longest key first).
+    2. Alias lookup via KABUPATEN_ALIASES from event.py.
+    3. Kecamatan reverse-lookup: if a known kecamatan name appears in text,
+       return its parent kabupaten.
+    4. Fuzzy fallback via difflib.get_close_matches against canonical names.
+    """
+    if not text:
+        return None
+
+    text_lower = text.lower()
+
+    # --- 1. Exact match (longest key first to avoid partial matches) ---
+    sorted_keys = sorted(KABUPATEN_KEYWORDS.keys(), key=len, reverse=True)
+    for keyword in sorted_keys:
+        if keyword in text_lower:
+            return KABUPATEN_KEYWORDS[keyword]
+
+    # --- 2. Alias lookup ---
+    for alias, kab in KABUPATEN_ALIASES.items():
+        if alias in text_lower:
+            return kab
+
+    # --- 3. Kecamatan reverse-lookup ---
+    # Sort by length descending so "Kotabumi Utara" matches before "Kotabumi"
+    sorted_kec = sorted(KECAMATAN_TO_KABUPATEN.keys(), key=len, reverse=True)
+    for kec_lower in sorted_kec:
+        if kec_lower in text_lower:
+            return KECAMATAN_TO_KABUPATEN[kec_lower]
+
+    # --- 4. Fuzzy fallback ---
+    # Only try fuzzy matching on short words (3-8 chars) that look like
+    # abbreviations, and require a high similarity cutoff to avoid false
+    # positives from common Indonesian words like "meter", "radar", etc.
+    COMMON_WORDS_TO_SKIP = {
+        "the", "dan", "untuk", "dari", "yang", "dalam", "dengan", "pada",
+        "ini", "itu", "tidak", "ada", "juga", "akan", "sudah", "lebih",
+        "lampung", "indonesia", "radar", "meter", "berita", "news",
+        "report", "times", "online", "kompas", "detik", "tempo",
+    }
+    words = re.findall(r"[a-zA-Z]+", text_lower)
+    canonical_names = list(LAMPUNG_LOCATIONS.keys())
+    canonical_lower = [n.lower() for n in canonical_names]
+    for word in words:
+        if len(word) < 3 or len(word) > 8:
+            continue
+        if word in COMMON_WORDS_TO_SKIP:
+            continue
+        matches = get_close_matches(word, canonical_lower, n=1, cutoff=0.85)
+        if matches:
+            # Map back to canonical name
+            for cn in canonical_names:
+                if cn.lower() == matches[0]:
+                    return cn
+
+    return None
 
 
 # ---------------------------------------------------------------------------
@@ -194,19 +289,6 @@ def fuzzy_dedup(new_item: dict, existing_items: list[dict]) -> bool:
     return False
 
 
-# ---------------------------------------------------------------------------
-# Location detection
-# ---------------------------------------------------------------------------
-
-def detect_kabupaten(text: str) -> Optional[str]:
-    """Detect kabupaten/kota from text."""
-    text_lower = text.lower()
-    for keyword, kabupaten in KABUPATEN_KEYWORDS.items():
-        if keyword in text_lower:
-            return kabupaten
-    return None
-
-
 def detect_kecamatan(text: str, kabupaten: Optional[str]) -> Optional[str]:
     """Detect kecamatan from text given an already-detected kabupaten.
 
@@ -264,10 +346,15 @@ def detect_category(text: str) -> str:
     """Detect category — fokus gangguan telekomunikasi di Provinsi Lampung.
 
     Logika prioritas:
+    0. SKIP berita positif (internet gratis, program pemerintah, promosi)
     1. Gangguan telekom LANGSUNG (sinyal hilang, internet mati, BTS rusak)
-    2. KORELASI gangguan telekom (listrik padam → internet mati, banjir → tower rusak)
-    3. SKIP berita positif (internet gratis, program pemerintah, promosi)
-    4. Bencana HANYA jika ada kata kunci infrastruktur telekom
+    2. Gangguan BTS & Tower
+    3. Gangguan Fiber Optik
+    4. Gangguan Microwave & Backhaul
+    5. Gangguan Internet (kata kunci umum)
+    6. Gangguan Listrik (korelasi)
+    7. Bencana (natural disasters & severe weather alerts)
+    8. DEFAULT: lainnya
     """
     text_lower = text.lower()
 
@@ -277,65 +364,91 @@ def detect_category(text: str) -> str:
         "meningkat", "cepat", "optimal", "berhasil", "peresmian",
         "pembangunan baru", "investasi", "penghargaan", "sosialisasi",
         "pelatihan", "workshop", "seminar", "konferensi",
+        "ujiceoba", "uji coba", "testing", "kunjungan", "edukasi",
+        "temani", "bermakna", "hiburan",
     ]
+    NEGATION_KEYWORDS = ["gangguan", "padam", "rusak", "putus", "hilang", "terganggu"]
     if any(w in text_lower for w in POSITIVE_KEYWORDS):
-        # Cek apakah ada kata negatif juga (negasi positif)
-        NEGATION_KEYWORDS = ["gangguan", "padam", "rusak", "putus", "hilang", "terganggu"]
         if not any(n in text_lower for n in NEGATION_KEYWORDS):
-            return "lainnya"  # Berita positif, bukan gangguan
+            return "lainnya"
 
     # === PRIORITAS 1: Gangguan telekom LANGSUNG ===
-    if any(w in text_lower for w in [
-        "sinyal hilang", "sinyal lemah", "internet mati", "internet gangguan",
-        "internet putus", "jaringan putus", "jaringan terganggu",
+    TELECOM_DIRECT_KEYWORDS = [
+        "sinyal hilang", "sinyal lemah", "sinyal putus",
+        "internet mati", "internet gangguan", "internet putus",
+        "internet lambat",
+        "jaringan putus", "jaringan terganggu",
         "IndiHome gangguan", "Telkom gangguan", "Telkomsel gangguan",
         "Indosat gangguan", "XL gangguan", "provider gangguan",
         "layanan internet lumpuh", "layanan telekomunikasi terganggu",
-    ]):
+        "gangguan layanan", "gangguan satelit", "gangguan komunikasi",
+        "layanan terganggu", "gangguan jaringan",
+        "Telkomsel pulihkan", "berhasil pulihkan site",
+        "demo telkomsel", "tuntut perbaikan layanan",
+        "gangguan provider",
+    ]
+    if any(w in text_lower for w in TELECOM_DIRECT_KEYWORDS):
         return "gangguan_telekomunikasi"
 
-    # === PRIORITAS 2: BTS & Tower ===
-    if any(w in text_lower for w in [
+    # === PRIORITAS 3: BTS & Tower ===
+    BTS_KEYWORDS = [
         "BTS rusak", "BTS mati", "BTS roboh", "BTS terbakar",
         "tower telekomunikasi", "tower seluler", "menara BTS",
         "menara seluler", "tower roboh", "tower jatuh",
         "panel surya BTS", "BTS tower listrik",
-    ]):
+        "membakar BTS", "bakar BTS", "membakar bts", "bakar bts",
+        "tiang provider", "tiang ilegal provider",
+        "tower bts",
+    ]
+    # Exclude "BTS" in non-telecom contexts (e.g. "Bus Skema BTS")
+    if "bus" not in text_lower and any(w in text_lower for w in BTS_KEYWORDS):
         return "gangguan_bts"
 
-    # === PRIORITAS 3: Fiber Optik ===
-    if any(w in text_lower for w in [
+    # === PRIORITAS 4: Fiber Optik ===
+    FIBER_KEYWORDS = [
         "fiber optik putus", "kabel optik putus", "FO terputus",
         "kabel tembaga putus", "kabel fiber", "serat optik",
-    ]):
+        "kabel utama telkom", "kabel optik",
+    ]
+    if any(w in text_lower for w in FIBER_KEYWORDS):
         return "gangguan_fiber"
 
-    # === PRIORITAS 4: Microwave & Backhaul ===
-    if any(w in text_lower for w in [
+    # === PRIORITAS 5: Microwave & Backhaul ===
+    MICROWAVE_KEYWORDS = [
         "microwave", "backhaul", "link radio", "point to point",
-    ]):
+    ]
+    if any(w in text_lower for w in MICROWAVE_KEYWORDS):
         return "gangguan_microwave"
 
-    # === PRIORITAS 5: Internet (kata kunci umum) ===
-    if any(w in text_lower for w in [
+    # === PRIORITAS 6: Internet (kata kunci umum) ===
+    INTERNET_KEYWORDS = [
         "internet", "sinyal", "jaringan", "download", "upload",
-    ]):
+    ]
+    if any(w in text_lower for w in INTERNET_KEYWORDS):
         return "gangguan_internet"
 
-    # === PRIORITAS 6: KORELASI — Listrik padam menyebabkan gangguan telekom ===
+    # === PRIORITAS 7: KORELASI — Listrik padam menyebabkan gangguan telekom ===
     if any(w in text_lower for w in ["listrik", "padam", "blackout", "PLN"]):
         return "gangguan_listrik"
 
-    # === PRIORITAS 7: KORELASI — Bencana yang merusak infrastruktur telekom ===
-    # Hanya jika ada kata kunci infrastruktur telekom dalam teks
-    BENCANA_KEYWORDS = ["gempa", "tsunami", "longsor", "banjir", "bencana", "puting beliung"]
-    TELECOM_INFRA_KEYWORDS = [
-        "tower", "BTS", "menara", "kabel", "jaringan", "telekomunikasi",
-        "internet", "sinyal", "fiber", "backhaul", "provider",
+    # === PRIORITAS 8: BENCANA — bencana alam & peringatan cuaca ekstrem ===
+    # Bencana alam selalu relevan untuk monitoring infrastruktur
+    BENCANA_IMPACT_KEYWORDS = [
+        "banjir", "longsor", "gempa", "tsunami", "puting beliung",
+        "bencana", "kebakaran", "badai",
     ]
-    is_bencana = any(b in text_lower for b in BENCANA_KEYWORDS)
-    has_telecom_context = any(t in text_lower for t in TELECOM_INFRA_KEYWORDS)
-    if is_bencana and has_telecom_context:
+    BENCANA_WEATHER_ALERTS = [
+        "cuaca ekstrem", "hujan sangat lebat", "hujan lebat",
+        "angin kencang",
+    ]
+    # Weather forecasts (prakiraan/prediksi cuaca) are NOT disasters
+    WEATHER_FORECAST_PATTERNS = ["prakiraan cuaca", "prediksi cuaca"]
+
+    is_bencana = any(b in text_lower for b in BENCANA_IMPACT_KEYWORDS)
+    is_weather_alert = any(a in text_lower for a in BENCANA_WEATHER_ALERTS)
+    is_forecast = any(f in text_lower for f in WEATHER_FORECAST_PATTERNS)
+
+    if (is_bencana or is_weather_alert) and not is_forecast:
         return "bencana"
 
     # === DEFAULT: lainnya (bukan gangguan telekom) ===

@@ -39,6 +39,7 @@ class VerifiedStatus(str, enum.Enum):
 
 
 # Kabupaten/Kota di Provinsi Lampung
+# Canonical names (keys) + kecamatan lists (values)
 LAMPUNG_LOCATIONS = {
     "Bandar Lampung": [
         "Tanjung Karang Pusat", "Tanjung Karang Timur", "Tanjung Karang Barat",
@@ -46,14 +47,14 @@ LAMPUNG_LOCATIONS = {
         "Teluk Betung Utara", "Teluk Betung Timur", "Panjang",
         "Kedamaian", "Rajabasa", "Kemiling", "Labuhan Ratu",
         "Sukarame", "Sukabumi", "Way Halim", "Bumi Waras",
-        "Enggal", "Kedaton", "Langkapura", "Tanjung Karang Pusat"
+        "Enggal", "Kedaton", "Langkapura", "Way Kandis",
     ],
     "Metro": [
         "Metro Pusat", "Metro Utara", "Metro Barat", "Metro Timur", "Metro Selatan"
     ],
     "Lampung Selatan": [
         "Kalianda", "Rajabasa", "Sidomulyo", "Katibung", "Penengahan",
-        "Palas", "Sragi", "Ketapang", "Bakauheni", "Tanjung Bintang"
+        "Palas", "Sragi", "Ketapang", "Bakauheni", "Tanjung Bintang", "Natar"
     ],
     "Lampung Tengah": [
         "Gunung Sugih", "Terbanggi Besar", "Kota Gajah", "Seputih Raman",
@@ -113,8 +114,78 @@ LAMPUNG_LOCATIONS = {
         "Karya Penggawa", "Way Krui", "Lemong", "Bengkunat",
         "Bengkunat Belimbing", "Ngambur", "Ngaras", "Bangkunat"
     ],
-
 }
+
+# Common abbreviations/aliases → canonical kabupaten name
+# Used by detect_kabupaten() for quick lookup before fuzzy fallback
+KABUPATEN_ALIASES = {
+    # Bandar Lampung variants
+    "bandar lampung": "Bandar Lampung",
+    "kota bandar lampung": "Bandar Lampung",
+    "kota bandarlampung": "Bandar Lampung",
+    "bandarlampung": "Bandar Lampung",
+    "balam": "Bandar Lampung",
+    "bd Lampung": "Bandar Lampung",
+    # Metro
+    "metro": "Metro",
+    # Lampung Selatan
+    "lampung selatan": "Lampung Selatan",
+    "lamsel": "Lampung Selatan",
+    "lam sel": "Lampung Selatan",
+    "lam-sel": "Lampung Selatan",
+    "lampsel": "Lampung Selatan",
+    # Lampung Tengah
+    "lampung tengah": "Lampung Tengah",
+    "lamteng": "Lampung Tengah",
+    "lam teng": "Lampung Tengah",
+    "lam-teng": "Lampung Tengah",
+    "lampteng": "Lampung Tengah",
+    # Lampung Utara
+    "lampung utara": "Lampung Utara",
+    "lamut": "Lampung Utara",
+    "lam utara": "Lampung Utara",
+    "lam-utara": "Lampung Utara",
+    "lampura": "Lampung Utara",
+    "lamp utara": "Lampung Utara",
+    # Lampung Timur
+    "lampung timur": "Lampung Timur",
+    "lamtim": "Lampung Timur",
+    "lam tim": "Lampung Timur",
+    "lam-tim": "Lampung Timur",
+    "lamptim": "Lampung Timur",
+    # Lampung Barat
+    "lampung barat": "Lampung Barat",
+    "lambar": "Lampung Barat",
+    "lam bar": "Lampung Barat",
+    "lam-bar": "Lampung Barat",
+    "lampbar": "Lampung Barat",
+    # Tanggamus
+    "tanggamus": "Tanggamus",
+    "tenggamus": "Tanggamus",  # common misspelling
+    # Tulang Bawang
+    "tulang bawang": "Tulang Bawang",
+    # Tulang Bawang Barat
+    "tulang bawang barat": "Tulang Bawang Barat",
+    "tubabar": "Tulang Bawang Barat",
+    # Way Kanan
+    "way kanan": "Way Kanan",
+    # Pesawaran
+    "pesawaran": "Pesawaran",
+    # Pringsewu
+    "pringsewu": "Pringsewu",
+    # Mesuji
+    "mesuji": "Mesuji",
+    # Pesisir Barat
+    "pesisir barat": "Pesisir Barat",
+    "pesbar": "Pesisir Barat",
+    "krui": "Pesisir Barat",
+}
+
+# Kecamatan → Kabupaten reverse mapping (for detecting kabupaten from kecamatan names)
+KECAMATAN_TO_KABUPATEN = {}
+for _kab, _kecs in LAMPUNG_LOCATIONS.items():
+    for _kec in _kecs:
+        KECAMATAN_TO_KABUPATEN[_kec.lower()] = _kab
 
 
 class Event(Base):

@@ -51,6 +51,7 @@ async def list_events(
     category: Optional[str] = None,
     severity: Optional[str] = None,
     status: Optional[str] = None,
+    verified_status: Optional[str] = None,
     kabupaten: Optional[str] = None,
     kecamatan: Optional[str] = None,
     source: Optional[str] = None,
@@ -69,6 +70,8 @@ async def list_events(
         query = query.filter(Event.severity == severity)
     if status:
         query = query.filter(Event.status == status)
+    if verified_status:
+        query = query.filter(Event.verified_status == verified_status)
     if kabupaten:
         query = query.filter(Event.kabupaten == kabupaten)
     if kecamatan:
@@ -201,6 +204,47 @@ async def delete_event(
 class VerifyRequest(BaseModel):
     verified_status: str  # confirmed atau rejected
     verifier_notes: Optional[str] = None
+
+
+class BulkVerifyRequest(BaseModel):
+    event_ids: list[int]
+    status: str  # 'confirmed' or 'rejected'
+    notes: Optional[str] = None
+
+
+@router.post("/bulk-verify")
+async def bulk_verify_events(
+    req: BulkVerifyRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role("operator", "superadmin")),
+):
+    """Bulk verify multiple events at once (operator+)."""
+    if req.status not in ("confirmed", "rejected"):
+        raise HTTPException(status_code=400, detail="status harus 'confirmed' atau 'rejected'")
+
+    if not req.event_ids:
+        raise HTTPException(status_code=400, detail="event_ids tidak boleh kosong")
+
+    events = db.query(Event).filter(Event.id.in_(req.event_ids)).all()
+    found_ids = {e.id for e in events}
+    missing_ids = [eid for eid in req.event_ids if eid not in found_ids]
+
+    now = datetime.now(timezone.utc)
+    for event in events:
+        event.verified_status = req.status
+        event.verified_by = current_user.id
+        event.verified_at = now
+        event.verifier_notes = req.notes
+
+    db.commit()
+
+    return {
+        "message": f"{len(events)} event berhasil diverifikasi sebagai '{req.status}'",
+        "verified_count": len(events),
+        "missing_ids": missing_ids,
+        "status": req.status,
+        "notes": req.notes,
+    }
 
 
 @router.post("/{event_id}/verify")

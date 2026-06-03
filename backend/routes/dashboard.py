@@ -17,44 +17,51 @@ router = APIRouter(prefix="/api/dashboard", tags=["dashboard"])
 @router.get("/stats")
 async def get_stats(
     days: int = Query(30, ge=1, le=365),
+    verified_status: Optional[str] = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     """Get summary statistics."""
     since = datetime.now(timezone.utc) - timedelta(days=days)
+    base_filter = [Event.created_at >= since]
+    if verified_status:
+        base_filter.append(Event.verified_status == verified_status)
 
-    total = db.query(func.count(Event.id)).filter(Event.created_at >= since).scalar() or 0
-    active = db.query(func.count(Event.id)).filter(Event.created_at >= since, Event.status == "active").scalar() or 0
-    resolved = db.query(func.count(Event.id)).filter(Event.created_at >= since, Event.status == "resolved").scalar() or 0
+    total = db.query(func.count(Event.id)).filter(*base_filter).scalar() or 0
+    active = db.query(func.count(Event.id)).filter(*base_filter, Event.status == "active").scalar() or 0
+    resolved = db.query(func.count(Event.id)).filter(*base_filter, Event.status == "resolved").scalar() or 0
 
     # Today
     today = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
-    today_count = db.query(func.count(Event.id)).filter(Event.created_at >= today).scalar() or 0
+    today_filter = [Event.created_at >= today]
+    if verified_status:
+        today_filter.append(Event.verified_status == verified_status)
+    today_count = db.query(func.count(Event.id)).filter(*today_filter).scalar() or 0
 
     # By severity
     severity_counts = {}
-    for sev, count in db.query(Event.severity, func.count(Event.id)).filter(Event.created_at >= since).group_by(Event.severity).all():
+    for sev, count in db.query(Event.severity, func.count(Event.id)).filter(*base_filter).group_by(Event.severity).all():
         severity_counts[sev] = count
 
     # By category
     category_counts = {}
-    for cat, count in db.query(Event.category, func.count(Event.id)).filter(Event.created_at >= since).group_by(Event.category).all():
+    for cat, count in db.query(Event.category, func.count(Event.id)).filter(*base_filter).group_by(Event.category).all():
         category_counts[cat] = count
 
     # By verified status
     verified_counts = {}
-    for vs, count in db.query(Event.verified_status, func.count(Event.id)).filter(Event.created_at >= since).group_by(Event.verified_status).all():
+    for vs, count in db.query(Event.verified_status, func.count(Event.id)).filter(*base_filter).group_by(Event.verified_status).all():
         verified_counts[vs] = count
 
     # Confirmed telecom incidents
     confirmed = db.query(func.count(Event.id)).filter(
-        Event.created_at >= since, Event.verified_status == "confirmed"
+        *base_filter, Event.verified_status == "confirmed"
     ).scalar() or 0
 
     # Top kabupaten
     top_kabupaten = []
     for kab, count in db.query(Event.kabupaten, func.count(Event.id)).filter(
-        Event.created_at >= since, Event.kabupaten.isnot(None)
+        *base_filter, Event.kabupaten.isnot(None)
     ).group_by(Event.kabupaten).order_by(desc(func.count(Event.id))).limit(10).all():
         top_kabupaten.append({"kabupaten": kab, "count": count})
 
@@ -77,6 +84,7 @@ async def get_timeline(
     days: int = Query(30, ge=1, le=365),
     category: Optional[str] = None,
     kabupaten: Optional[str] = None,
+    verified_status: Optional[str] = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -88,6 +96,8 @@ async def get_timeline(
         query = query.filter(Event.category == category)
     if kabupaten:
         query = query.filter(Event.kabupaten == kabupaten)
+    if verified_status:
+        query = query.filter(Event.verified_status == verified_status)
 
     events = query.order_by(Event.created_at).all()
 
@@ -107,20 +117,27 @@ async def get_timeline(
 @router.get("/by-location")
 async def get_by_location(
     days: int = Query(30, ge=1, le=365),
+    verified_status: Optional[str] = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     """Get events grouped by location (kabupaten/kota)."""
     since = datetime.now(timezone.utc) - timedelta(days=days)
+    base_filter = [Event.created_at >= since, Event.kabupaten.isnot(None)]
+    if verified_status:
+        base_filter.append(Event.verified_status == verified_status)
 
     results = []
     for kab, count in db.query(Event.kabupaten, func.count(Event.id)).filter(
-        Event.created_at >= since, Event.kabupaten.isnot(None)
+        *base_filter
     ).group_by(Event.kabupaten).order_by(desc(func.count(Event.id))).all():
         # Get severity breakdown for each kabupaten
+        sev_filter = [Event.created_at >= since, Event.kabupaten == kab]
+        if verified_status:
+            sev_filter.append(Event.verified_status == verified_status)
         sev_counts = {}
         for sev, cnt in db.query(Event.severity, func.count(Event.id)).filter(
-            Event.created_at >= since, Event.kabupaten == kab
+            *sev_filter
         ).group_by(Event.severity).all():
             sev_counts[sev] = cnt
 
@@ -137,6 +154,7 @@ async def get_by_location(
 async def get_by_category(
     days: int = Query(30, ge=1, le=365),
     kabupaten: Optional[str] = None,
+    verified_status: Optional[str] = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -146,6 +164,8 @@ async def get_by_category(
 
     if kabupaten:
         query = query.filter(Event.kabupaten == kabupaten)
+    if verified_status:
+        query = query.filter(Event.verified_status == verified_status)
 
     results = []
     for cat, count in query.with_entities(Event.category, func.count(Event.id)).group_by(Event.category).all():
