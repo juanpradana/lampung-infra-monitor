@@ -1,7 +1,7 @@
 """Background scheduler for monitoring jobs."""
 import asyncio
 import logging
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 
@@ -33,6 +33,24 @@ def is_in_lampung(lat: float, lon: float) -> bool:
     )
 
 
+def _parse_dt(val):
+    """Parse a datetime value — accept datetime, date, or ISO string."""
+    if val is None:
+        return None
+    if isinstance(val, datetime):
+        return val
+    if isinstance(val, date):
+        return datetime(val.year, val.month, val.day, tzinfo=timezone.utc)
+    if isinstance(val, str):
+        # Handle ISO format like "2026-06-01T10:32:23+00:00"
+        try:
+            from datetime import timezone as tz
+            return datetime.fromisoformat(val)
+        except (ValueError, TypeError):
+            pass
+    return None
+
+
 async def save_event(event_data: dict, db) -> bool:
     """Save an event if it doesn't already exist."""
     source_id = event_data.get("source_id")
@@ -55,7 +73,7 @@ async def save_event(event_data: dict, db) -> bool:
         kecamatan=event_data.get("kecamatan"),
         latitude=event_data.get("latitude"),
         longitude=event_data.get("longitude"),
-        occurred_at=event_data.get("occurred_at"),
+        occurred_at=_parse_dt(event_data.get("occurred_at")),
     )
     db.add(event)
     db.commit()
