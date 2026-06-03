@@ -55,7 +55,7 @@ Sistem ini memantau dan mengumpulkan data insiden infrastruktur digital dari ber
 - pip atau uv
 - (Opsional) Telegram Bot Token
 
-### Quick Start
+### Linux / macOS
 
 ```bash
 # Clone repository
@@ -79,6 +79,38 @@ python3 -m backend.init_db
 # Jalankan aplikasi
 python3 -m backend.main
 ```
+
+### Windows (PowerShell)
+
+```powershell
+# Clone repository
+git clone https://github.com/juanpradana/lampung-infra-monitor.git
+cd lampung-infra-monitor
+
+# Buat virtual environment
+python -m venv .venv
+
+# Aktifkan virtual environment
+.\.venv\Scripts\Activate.ps1
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Copy & edit config
+Copy-Item .env.example .env
+# Edit .env dengan konfigurasi kamu
+
+# Inisialisasi database & buat superadmin pertama
+python -m backend.init_db
+
+# Jalankan aplikasi
+python -m backend.main
+```
+
+> **Catatan**: Jika muncul error kebijakan eksekusi PowerShell, jalankan `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass` sebelum mengaktifkan virtual environment. Alternatif, gunakan **Command Prompt (CMD)**:
+> ```cmd
+> .venv\Scripts\activate.bat
+> ```
 
 ### Docker
 
