@@ -94,10 +94,12 @@ NEGATIVE_KEYWORDS = [
     # Weather forecasts (not disasters)
     "prakiraan cuaca", "prediksi cuaca", "cuaca hari ini",
     "cuaca perairan", "ramalan cuaca",
-    # Road damage (infrastructure but not telecom)
+    # Road/bridge damage (infrastructure but not telecom)
     "jalan rusak", "jembatan putus", "jalan provinsi", "infrastruktur jalan",
+    "jalur mudik", "truk perusak jalan",
     # Crime
     "narkotika", "ekstasi", "pembunuhan", "pencurian motor", "penadah motor",
+    "jaringan narkoba", "curanmor", "dilecehkan", "maling di pati",
     # Education
     "putus sekolah", "siswa tka", "sma terbuka", "infak pendidikan",
     # Automotive
@@ -106,6 +108,13 @@ NEGATIVE_KEYWORDS = [
     "pilpres", "partai politik", "bupati lampung tengah kpk",
     # Non-Lampung national figures
     "jokowi presiden", "ganjar pranowo", "bali telkom",
+    # Promotional / non-disruption
+    "paket internet", "pilihan paket", "kuota internet", "rekomendasi paket",
+    "temani sahur", "live tiktok", "rekor muri",
+    # Non-telecom infrastructure
+    "bedah rumah", "belanja daerah", "kereta aceh",
+    # General non-telecom
+    "padi dan jagung", "singkong", "pltu batubara",
 ]
 
 
@@ -121,6 +130,8 @@ def _is_negative_match(text: str) -> bool:
 POSITIVE_KEYWORDS_BOOST = [
     "telkomsel", "indihome", "bts roboh", "kabel putus",
     "gangguan sinyal", "tower roboh", "jaringan internet down",
+    "gangguan layanan", "sinyal hilang", "internet mati",
+    "pemadaman listrik", "tower mitratel", "frekuensi radio",
 ]
 
 
