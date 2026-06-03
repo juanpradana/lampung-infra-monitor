@@ -31,6 +31,12 @@ class EventStatus(str, enum.Enum):
     CLOSED = "closed"
 
 
+class VerifiedStatus(str, enum.Enum):
+    PENDING = "pending"       # Menunggu verifikasi
+    CONFIRMED = "confirmed"   # Dipastikan gangguan telekom
+    REJECTED = "rejected"     # Bukan gangguan telekom
+
+
 # Kabupaten/Kota di Provinsi Lampung
 LAMPUNG_LOCATIONS = {
     "Bandar Lampung": [
@@ -146,6 +152,12 @@ class Event(Base):
     created_by = Column(Integer, ForeignKey("users.id"), nullable=True)
     raw_data = Column(Text, nullable=True)  # JSON string of original data
 
+    # Verifikasi — apakah benar gangguan telekom?
+    verified_status = Column(String(20), nullable=False, default=VerifiedStatus.PENDING)
+    verified_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+    verified_at = Column(DateTime, nullable=True)
+    verifier_notes = Column(Text, nullable=True)  # Catatan verifikator
+
     def to_dict(self):
         return {
             "id": self.id,
@@ -166,6 +178,10 @@ class Event(Base):
             "reported_at": self.reported_at.isoformat() if self.reported_at else None,
             "resolved_at": self.resolved_at.isoformat() if self.resolved_at else None,
             "created_at": self.created_at.isoformat() if self.created_at else None,
+            "verified_status": self.verified_status,
+            "verified_by": self.verified_by,
+            "verified_at": self.verified_at.isoformat() if self.verified_at else None,
+            "verifier_notes": self.verifier_notes,
             "status_display": self.status,
             "severity_display": self.severity,
         }

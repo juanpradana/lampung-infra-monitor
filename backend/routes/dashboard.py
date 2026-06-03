@@ -7,6 +7,7 @@ from typing import Optional
 
 from backend.core.database import get_db
 from backend.models import Event, MonitorLog
+from backend.models.event import VerifiedStatus
 from backend.routes.auth import get_current_user
 from backend.models.user import User
 
@@ -40,6 +41,16 @@ async def get_stats(
     for cat, count in db.query(Event.category, func.count(Event.id)).filter(Event.created_at >= since).group_by(Event.category).all():
         category_counts[cat] = count
 
+    # By verified status
+    verified_counts = {}
+    for vs, count in db.query(Event.verified_status, func.count(Event.id)).filter(Event.created_at >= since).group_by(Event.verified_status).all():
+        verified_counts[vs] = count
+
+    # Confirmed telecom incidents
+    confirmed = db.query(func.count(Event.id)).filter(
+        Event.created_at >= since, Event.verified_status == "confirmed"
+    ).scalar() or 0
+
     # Top kabupaten
     top_kabupaten = []
     for kab, count in db.query(Event.kabupaten, func.count(Event.id)).filter(
@@ -53,6 +64,8 @@ async def get_stats(
         "active_events": active,
         "resolved_events": resolved,
         "today_events": today_count,
+        "confirmed_events": confirmed,
+        "verified_counts": verified_counts,
         "by_severity": severity_counts,
         "by_category": category_counts,
         "top_kabupaten": top_kabupaten,

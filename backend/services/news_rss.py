@@ -52,11 +52,12 @@ NEWS_QUERIES = {
         "pemadaman listrik lampung",
     ],
     "bencana": [
-        "banjir lampung tower",
-        "longsor lampung jaringan",
-        "gempa lampung menara",
-        "puting beliung lampung BTS",
-        "bencana lampung telekomunikasi",
+        "banjir lampung tower BTS",
+        "longsor lampung jaringan internet",
+        "gempa lampung menara telekomunikasi",
+        "puting beliung lampung tower seluler",
+        "bencana lampung gangguan internet",
+        "banjir lampung gangguan sinyal",
     ],
 }
 
@@ -135,39 +136,107 @@ def detect_kabupaten(text: str) -> Optional[str]:
 
 
 def detect_severity(text: str) -> str:
-    """Detect severity from text keywords."""
+    """Detect severity — berdasarkan dampak gangguan telekom."""
     text_lower = text.lower()
-    for level in ["critical", "high", "medium"]:
-        for keyword in SEVERITY_KEYWORDS[level]:
-            if keyword in text_lower:
-                return level
+    # Critical: gangguan masif, mati total, darurat
+    if any(w in text_lower for w in [
+        "mati total", "blackout", "darurat", "korban jiwa", "roboh",
+        "terputus total", "lumpuh", "gempa besar", "tsunami"
+    ]):
+        return "critical"
+    # High: gangguan signifikan, banyak terdampak
+    if any(w in text_lower for w in [
+        "banjir bandang", "longsor", "rusak parah", "putus total",
+        "gangguan besar", "terganggu", "terdampak", "padam total",
+        "putus", "roboh"
+    ]):
+        return "high"
+    # Medium: gangguan sedang, sebagian area
+    if any(w in text_lower for w in [
+        "gangguan", "padam", "rusak", "lemah", "lambat", "berkurang"
+    ]):
+        return "medium"
     return "low"
 
-
 def detect_category(text: str) -> str:
-    """Detect category — fokus infrastruktur digital & telekomunikasi."""
+    """Detect category — fokus gangguan telekomunikasi di Provinsi Lampung.
+
+    Logika prioritas:
+    1. Gangguan telekom LANGSUNG (sinyal hilang, internet mati, BTS rusak)
+    2. KORELASI gangguan telekom (listrik padam → internet mati, banjir → tower rusak)
+    3. SKIP berita positif (internet gratis, program pemerintah, promosi)
+    4. Bencana HANYA jika ada kata kunci infrastruktur telekom
+    """
     text_lower = text.lower()
-    # Gangguan telekomunikasi spesifik
-    if any(w in text_lower for w in ["internet", "sinyal", "BTS", "tower", "fiber", "jaringan", "telekomunikasi", "IndiHome", "Telkom", "provider"]):
+
+    # === SKIP: berita positif yang bukan gangguan ===
+    POSITIVE_KEYWORDS = [
+        "gratis", "murah", "promosi", "program", "dukung", "dukungan",
+        "meningkat", "cepat", "optimal", "berhasil", "peresmian",
+        "pembangunan baru", "investasi", "penghargaan", "sosialisasi",
+        "pelatihan", "workshop", "seminar", "konferensi",
+    ]
+    if any(w in text_lower for w in POSITIVE_KEYWORDS):
+        # Cek apakah ada kata negatif juga (negasi positif)
+        NEGATION_KEYWORDS = ["gangguan", "padam", "rusak", "putus", "hilang", "terganggu"]
+        if not any(n in text_lower for n in NEGATION_KEYWORDS):
+            return "lainnya"  # Berita positif, bukan gangguan
+
+    # === PRIORITAS 1: Gangguan telekom LANGSUNG ===
+    if any(w in text_lower for w in [
+        "sinyal hilang", "sinyal lemah", "internet mati", "internet gangguan",
+        "internet putus", "jaringan putus", "jaringan terganggu",
+        "IndiHome gangguan", "Telkom gangguan", "Telkomsel gangguan",
+        "Indosat gangguan", "XL gangguan", "provider gangguan",
+        "layanan internet lumpuh", "layanan telekomunikasi terganggu",
+    ]):
         return "gangguan_telekomunikasi"
-    # BTS & Tower
-    if any(w in text_lower for w in ["BTS", "tower telekomunikasi", "tower listrik", "menara seluler", "panel surya BTS"]):
+
+    # === PRIORITAS 2: BTS & Tower ===
+    if any(w in text_lower for w in [
+        "BTS rusak", "BTS mati", "BTS roboh", "BTS terbakar",
+        "tower telekomunikasi", "tower seluler", "menara BTS",
+        "menara seluler", "tower roboh", "tower jatuh",
+        "panel surya BTS", "BTS tower listrik",
+    ]):
         return "gangguan_bts"
-    # Fiber optik
-    if any(w in text_lower for w in ["fiber optik", "kabel optik", "FO terputus", "kabel tembaga"]):
+
+    # === PRIORITAS 3: Fiber Optik ===
+    if any(w in text_lower for w in [
+        "fiber optik putus", "kabel optik putus", "FO terputus",
+        "kabel tembaga putus", "kabel fiber", "serat optik",
+    ]):
         return "gangguan_fiber"
-    # Microwave & backhaul
-    if any(w in text_lower for w in ["microwave", "backhaul", "link radio", "point to point"]):
+
+    # === PRIORITAS 4: Microwave & Backhaul ===
+    if any(w in text_lower for w in [
+        "microwave", "backhaul", "link radio", "point to point",
+    ]):
         return "gangguan_microwave"
-    # Internet (general)
-    if any(w in text_lower for w in ["internet", "sinyal hilang", "sinyal lemah", "jaringan putus"]):
+
+    # === PRIORITAS 5: Internet (kata kunci umum) ===
+    if any(w in text_lower for w in [
+        "internet", "sinyal", "jaringan", "download", "upload",
+    ]):
         return "gangguan_internet"
-    # Listrik (penyebab gangguan telekom)
+
+    # === PRIORITAS 6: KORELASI — Listrik padam menyebabkan gangguan telekom ===
     if any(w in text_lower for w in ["listrik", "padam", "blackout", "PLN"]):
         return "gangguan_listrik"
-    # Bencana (hanya jika relevan dengan infrastruktur telekom)
-    if any(w in text_lower for w in ["gempa", "tsunami", "longsor", "banjir", "bencana", "puting beliung"]):
+
+    # === PRIORITAS 7: KORELASI — Bencana yang merusak infrastruktur telekom ===
+    # Hanya jika ada kata kunci infrastruktur telekom dalam teks
+    BENCANA_KEYWORDS = ["gempa", "tsunami", "longsor", "banjir", "bencana", "puting beliung"]
+    TELECOM_INFRA_KEYWORDS = [
+        "tower", "BTS", "menara", "kabel", "jaringan", "telekomunikasi",
+        "internet", "sinyal", "fiber", "backhaul", "provider",
+    ]
+    is_bencana = any(b in text_lower for b in BENCANA_KEYWORDS)
+    has_telecom_context = any(t in text_lower for t in TELECOM_INFRA_KEYWORDS)
+    if is_bencana and has_telecom_context:
         return "bencana"
+
+    # === DEFAULT: lainnya (bukan gangguan telekom) ===
     return "lainnya"
 
 

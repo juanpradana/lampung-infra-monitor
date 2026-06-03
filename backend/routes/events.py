@@ -8,6 +8,7 @@ from typing import Optional
 
 from backend.core.database import get_db
 from backend.models import Event, EventCategory, EventSeverity, EventStatus
+from backend.models.event import VerifiedStatus
 from backend.routes.auth import get_current_user, require_role
 from backend.models.user import User
 
@@ -195,3 +196,54 @@ async def delete_event(
     db.delete(event)
     db.commit()
     return {"message": "Event berhasil dihapus"}
+
+
+class VerifyRequest(BaseModel):
+    verified_status: str  # confirmed atau rejected
+    verifier_notes: Optional[str] = None
+
+
+@router.post("/{event_id}/verify")
+async def verify_event(
+    event_id: int,
+    req: VerifyRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role("operator", "superadmin")),
+):
+    """Verifikasi event — apakah benar gangguan telekom (operator+)."""
+    if req.verified_status not in ("confirmed", "rejected"):
+        raise HTTPException(status_code=400, detail="verified_status harus 'confirmed' atau 'rejected'")
+
+    event = db.query(Event).filter(Event.id == event_id).first()
+    if not event:
+        raise HTTPException(status_code=404, detail="Event tidak ditemukan")
+
+    event.verified_status = req.verified_status
+    event.verified_by = current_user.id
+    event.verified_at = datetime.now(timezone.utc)
+    event.verifier_notes = req.verifier_notes
+    db.commit()
+    db.refresh(event)
+    return event.to_dict()
+
+
+@router.get("/verify/pending")
+async def list_pending_verification(
+    page: int = Query(1, ge=1),
+    per_page: int = Query(50, ge=1, le=200),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """List event yang belum diverifikasi."""
+    query = db.query(Event).filter(Event.verified_status == "pending")
+    total = query.count()
+    events = query.order_by(desc(Event.created_at)).offset(
+        (page - 1) * per_page
+    ).limit(per_page).all()
+    return {
+        "total": total,
+        "page": page,
+        "per_page": per_page,
+        "pages": (total + per_page - 1) // per_page,
+        "events": [e.to_dict() for e in events],
+    }

@@ -14,7 +14,6 @@ from backend.routes.auth import router as auth_router
 from backend.routes.events import router as events_router
 from backend.routes.dashboard import router as dashboard_router
 from backend.routes.admin import router as admin_router
-from backend.routes.aduan import router as aduan_router
 from backend.services.scheduler import start_scheduler, stop_scheduler
 
 settings = get_settings()
@@ -75,7 +74,6 @@ app.include_router(auth_router)
 app.include_router(events_router)
 app.include_router(dashboard_router)
 app.include_router(admin_router)
-app.include_router(aduan_router)
 
 
 # Page routes
@@ -98,10 +96,6 @@ async def dashboard_page(request: Request):
 async def admin_page(request: Request):
     return templates.TemplateResponse("admin.html", {"request": request, "app_name": settings.APP_NAME})
 
-
-@app.get("/aduan", response_class=HTMLResponse)
-async def aduan_page(request: Request):
-    return templates.TemplateResponse("aduan.html", {"request": request, "app_name": settings.APP_NAME})
 
 
 @app.get("/health")
