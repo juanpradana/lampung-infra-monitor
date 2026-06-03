@@ -1,4 +1,5 @@
 """Background scheduler for monitoring jobs."""
+import asyncio
 import logging
 from datetime import datetime, timezone
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -14,6 +15,14 @@ from backend.services.telegram_bot import create_notifier
 logger = logging.getLogger(__name__)
 settings = get_settings()
 scheduler = AsyncIOScheduler()
+
+# Hard timeouts for each job (seconds). If a job exceeds this, it is killed.
+BMKG_JOB_TIMEOUT = 60   # BMKG has 2 HTTP calls, each 10s max → 60s hard limit
+NEWS_JOB_TIMEOUT = 300  # News has 35+ HTTP calls → 5 min hard limit
+SUMMARY_JOB_TIMEOUT = 30
+
+# Watchdog: mark any 'running' log older than this as 'failed'
+STALE_LOG_TIMEOUT = 120  # 2 minutes
 
 
 def is_in_lampung(lat: float, lon: float) -> bool:
@@ -54,14 +63,61 @@ async def save_event(event_data: dict, db) -> bool:
     return True
 
 
-async def job_check_bmkg():
-    """BMKG monitoring job."""
+def _safe_commit(db, context: str):
+    """Commit with fallback — log error but never raise."""
+    try:
+        db.commit()
+    except Exception as e:
+        logger.error(f"DB commit failed ({context}): {e}")
+        try:
+            db.rollback()
+        except Exception:
+            pass
+
+
+def cleanup_stale_logs():
+    """Mark any 'running' monitor logs older than STALE_LOG_TIMEOUT as 'failed'.
+
+    This is a synchronous helper called at job-start time before each job
+    executes, so it runs outside the async timeout wrapper.
+    """
+    db = SessionLocal()
+    try:
+        cutoff = datetime.now(timezone.utc).timestamp() - STALE_LOG_TIMEOUT
+        cutoff_dt = datetime.fromtimestamp(cutoff, tz=timezone.utc)
+        stale = (
+            db.query(MonitorLog)
+            .filter(
+                MonitorLog.status == "running",
+                MonitorLog.started_at < cutoff_dt,
+            )
+            .all()
+        )
+        if stale:
+            for log in stale:
+                log.status = "failed"
+                log.error_message = "Timed out — job exceeded watchdog threshold"
+                log.finished_at = datetime.now(timezone.utc)
+            _safe_commit(db, "cleanup_stale_logs")
+            logger.warning(
+                "Watchdog: marked %d stale 'running' log(s) as 'failed'", len(stale)
+            )
+    except Exception as e:
+        logger.error(f"Watchdog cleanup error: {e}")
+    finally:
+        db.close()
+
+
+# ── BMKG Job ────────────────────────────────────────────────────────────
+
+async def _bmkg_job_inner():
+    """Core BMKG check logic (runs inside timeout wrapper)."""
     logger.info("Running BMKG check...")
     db = SessionLocal()
     notifier = create_notifier()
     log = MonitorLog(job_name="bmkg_check", started_at=datetime.now(timezone.utc))
     db.add(log)
-    db.commit()
+    _safe_commit(db, "bmkg_check: create log")
 
     try:
         events_found = 0
@@ -99,27 +155,86 @@ async def job_check_bmkg():
         log.events_found = events_found
         log.alerts_sent = alerts_sent
         log.finished_at = datetime.now(timezone.utc)
-        db.commit()
-        logger.info(f"BMKG check done: {events_found} events found, {alerts_sent} alerts sent")
+        _safe_commit(db, "bmkg_check: success")
+        logger.info(
+            "BMKG check done: %d events found, %d alerts sent", events_found, alerts_sent
+        )
 
     except Exception as e:
         log.status = "failed"
-        log.error_message = str(e)
+        log.error_message = str(e)[:500]
         log.finished_at = datetime.now(timezone.utc)
-        db.commit()
-        logger.error(f"BMKG check failed: {e}")
+        _safe_commit(db, "bmkg_check: failed")
+        logger.error("BMKG check failed: %s", e)
     finally:
         db.close()
 
 
-async def job_check_news():
-    """News monitoring job."""
+async def job_check_bmkg():
+    """BMKG monitoring job — wrapped with hard timeout."""
+    cleanup_stale_logs()
+    try:
+        await asyncio.wait_for(_bmkg_job_inner(), timeout=BMKG_JOB_TIMEOUT)
+    except asyncio.TimeoutError:
+        logger.error(
+            "BMKG check TIMED OUT after %ds — job killed", BMKG_JOB_TIMEOUT
+        )
+        # Try to update the log entry to 'failed'
+        db = SessionLocal()
+        try:
+            log = (
+                db.query(MonitorLog)
+                .filter(
+                    MonitorLog.job_name == "bmkg_check",
+                    MonitorLog.status == "running",
+                )
+                .order_by(MonitorLog.id.desc())
+                .first()
+            )
+            if log:
+                log.status = "failed"
+                log.error_message = f"Hard timeout after {BMKG_JOB_TIMEOUT}s"
+                log.finished_at = datetime.now(timezone.utc)
+                _safe_commit(db, "bmkg_check: timeout update")
+        except Exception as e:
+            logger.error("Failed to update timeout log: %s", e)
+        finally:
+            db.close()
+    except Exception as e:
+        logger.error("BMKG check unexpected error: %s", e)
+        # Ensure log is marked failed even for unexpected errors
+        db = SessionLocal()
+        try:
+            log = (
+                db.query(MonitorLog)
+                .filter(
+                    MonitorLog.job_name == "bmkg_check",
+                    MonitorLog.status == "running",
+                )
+                .order_by(MonitorLog.id.desc())
+                .first()
+            )
+            if log:
+                log.status = "failed"
+                log.error_message = f"Unexpected error: {str(e)[:500]}"
+                log.finished_at = datetime.now(timezone.utc)
+                _safe_commit(db, "bmkg_check: unexpected error update")
+        except Exception:
+            pass
+        finally:
+            db.close()
+
+
+# ── News Job ─────────────────────────────────────────────────────────────
+
+async def _news_job_inner():
+    """Core news check logic (runs inside timeout wrapper)."""
     logger.info("Running news check...")
     db = SessionLocal()
     notifier = create_notifier()
     log = MonitorLog(job_name="news_check", started_at=datetime.now(timezone.utc))
     db.add(log)
-    db.commit()
+    _safe_commit(db, "news_check: create log")
 
     try:
         news_items = await fetch_all_news()
@@ -140,18 +255,75 @@ async def job_check_news():
         log.events_found = events_found
         log.alerts_sent = alerts_sent
         log.finished_at = datetime.now(timezone.utc)
-        db.commit()
-        logger.info(f"News check done: {events_found} events found, {alerts_sent} alerts sent")
+        _safe_commit(db, "news_check: success")
+        logger.info(
+            "News check done: %d events found, %d alerts sent", events_found, alerts_sent
+        )
 
     except Exception as e:
         log.status = "failed"
-        log.error_message = str(e)
+        log.error_message = str(e)[:500]
         log.finished_at = datetime.now(timezone.utc)
-        db.commit()
-        logger.error(f"News check failed: {e}")
+        _safe_commit(db, "news_check: failed")
+        logger.error("News check failed: %s", e)
     finally:
         db.close()
 
+
+async def job_check_news():
+    """News monitoring job — wrapped with hard timeout."""
+    cleanup_stale_logs()
+    try:
+        await asyncio.wait_for(_news_job_inner(), timeout=NEWS_JOB_TIMEOUT)
+    except asyncio.TimeoutError:
+        logger.error(
+            "News check TIMED OUT after %ds — job killed", NEWS_JOB_TIMEOUT
+        )
+        db = SessionLocal()
+        try:
+            log = (
+                db.query(MonitorLog)
+                .filter(
+                    MonitorLog.job_name == "news_check",
+                    MonitorLog.status == "running",
+                )
+                .order_by(MonitorLog.id.desc())
+                .first()
+            )
+            if log:
+                log.status = "failed"
+                log.error_message = f"Hard timeout after {NEWS_JOB_TIMEOUT}s"
+                log.finished_at = datetime.now(timezone.utc)
+                _safe_commit(db, "news_check: timeout update")
+        except Exception as e:
+            logger.error("Failed to update timeout log: %s", e)
+        finally:
+            db.close()
+    except Exception as e:
+        logger.error("News check unexpected error: %s", e)
+        db = SessionLocal()
+        try:
+            log = (
+                db.query(MonitorLog)
+                .filter(
+                    MonitorLog.job_name == "news_check",
+                    MonitorLog.status == "running",
+                )
+                .order_by(MonitorLog.id.desc())
+                .first()
+            )
+            if log:
+                log.status = "failed"
+                log.error_message = f"Unexpected error: {str(e)[:500]}"
+                log.finished_at = datetime.now(timezone.utc)
+                _safe_commit(db, "news_check: unexpected error update")
+        except Exception:
+            pass
+        finally:
+            db.close()
+
+
+# ── Daily Summary Job ───────────────────────────────────────────────────
 
 async def job_daily_summary():
     """Daily summary job."""
@@ -170,13 +342,15 @@ async def job_daily_summary():
 
         if notifier.enabled:
             await notifier.send_daily_summary(event_dicts, date_str)
-            logger.info(f"Daily summary sent: {len(event_dicts)} events")
+            logger.info("Daily summary sent: %d events", len(event_dicts))
 
     except Exception as e:
-        logger.error(f"Daily summary failed: {e}")
+        logger.error("Daily summary failed: %s", e)
     finally:
         db.close()
 
+
+# ── Scheduler lifecycle ──────────────────────────────────────────────────
 
 def start_scheduler():
     """Start the background scheduler."""
@@ -210,11 +384,14 @@ def start_scheduler():
         replace_existing=True,
     )
 
+    # Run watchdog once at startup to clean any stale logs from previous run
+    cleanup_stale_logs()
+
     scheduler.start()
     logger.info("Scheduler started with jobs:")
-    logger.info(f"  - BMKG check: every {bmkg_interval}s")
-    logger.info(f"  - News check: every {news_interval}s")
-    logger.info(f"  - Daily summary: 20:00 WIB")
+    logger.info("  - BMKG check: every %ds (hard timeout: %ds)", bmkg_interval, BMKG_JOB_TIMEOUT)
+    logger.info("  - News check: every %ds (hard timeout: %ds)", news_interval, NEWS_JOB_TIMEOUT)
+    logger.info("  - Daily summary: 20:00 WIB (hard timeout: %ds)", SUMMARY_JOB_TIMEOUT)
 
 
 def stop_scheduler():

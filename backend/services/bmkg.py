@@ -11,11 +11,14 @@ BMKG_AUTO_GEMPA = "https://data.bmkg.go.id/DataMKG/TEWS/autogempa.xml"
 BMKG_GEMPA_DIRASAKAN = "https://data.bmkg.go.id/DataMKG/TEWS/gempadirasakan.xml"
 BMKG_GEMPA_TERKINI = "https://data.bmkg.go.id/DataMKG/TEWS/gempaterkini.xml"
 
+# Tighter timeouts: 5s connect, 10s read — prevents indefinite hangs
+BMKG_TIMEOUT = httpx.Timeout(connect=5.0, read=10.0, write=5.0, pool=5.0)
+
 
 async def fetch_latest_earthquake() -> Optional[dict]:
     """Fetch latest earthquake from BMKG."""
     try:
-        async with httpx.AsyncClient(timeout=15) as client:
+        async with httpx.AsyncClient(timeout=BMKG_TIMEOUT) as client:
             resp = await client.get(BMKG_AUTO_GEMPA)
             resp.raise_for_status()
 
@@ -55,7 +58,7 @@ async def fetch_recent_earthquakes() -> list[dict]:
     """Fetch recent felt earthquakes from BMKG."""
     results = []
     try:
-        async with httpx.AsyncClient(timeout=15) as client:
+        async with httpx.AsyncClient(timeout=BMKG_TIMEOUT) as client:
             resp = await client.get(BMKG_GEMPA_DIRASAKAN)
             resp.raise_for_status()
 
@@ -91,7 +94,7 @@ async def fetch_recent_earthquakes() -> list[dict]:
 async def fetch_latest_earthquake_mmi() -> Optional[dict]:
     """Fetch latest earthquake MMI shakemap from BMKG."""
     try:
-        async with httpx.AsyncClient(timeout=15) as client:
+        async with httpx.AsyncClient(timeout=BMKG_TIMEOUT) as client:
             resp = await client.get("https://data.bmkg.go.id/DataMKG/TEWS/autogempa.xml")
             resp.raise_for_status()
 

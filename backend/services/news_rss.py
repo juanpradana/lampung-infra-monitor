@@ -1,6 +1,8 @@
 """News RSS fetcher - monitors Google News and local media for infrastructure incidents."""
 import logging
 import hashlib
+import time
+import asyncio
 from datetime import datetime, timezone
 from typing import Optional
 import httpx
@@ -8,7 +10,16 @@ import feedparser
 from html import unescape
 import re
 
+# Import LAMPUNG_LOCATIONS from event model for kecamatan detection
+from backend.models.event import LAMPUNG_LOCATIONS
+
 logger = logging.getLogger(__name__)
+
+# Rate limit: seconds to wait between Google News RSS requests
+GOOGLE_NEWS_RATE_LIMIT_SECONDS = 1
+
+# Fuzzy dedup threshold (word overlap ratio)
+FUZZY_DEDUP_THRESHOLD = 0.7
 
 NEWS_QUERIES = {
     "gangguan_telekomunikasi": [
@@ -110,6 +121,10 @@ KABUPATEN_KEYWORDS = {
 }
 
 
+# ---------------------------------------------------------------------------
+# Utility helpers
+# ---------------------------------------------------------------------------
+
 def clean_html(text: str) -> str:
     """Remove HTML tags and clean text."""
     if not text:
@@ -126,6 +141,62 @@ def generate_source_id(title: str, source: str) -> str:
     return hashlib.md5(content.encode()).hexdigest()
 
 
+def _word_overlap_ratio(text_a: str, text_b: str) -> float:
+    """Compute word overlap ratio between two texts (Jaccard-like).
+    Returns a value between 0.0 (no overlap) and 1.0 (identical word sets).
+    """
+    words_a = set(text_a.lower().split())
+    words_b = set(text_b.lower().split())
+    if not words_a or not words_b:
+        return 0.0
+    intersection = words_a & words_b
+    union = words_a | words_b
+    return len(intersection) / len(union)
+
+
+# ---------------------------------------------------------------------------
+# Fuzzy deduplication
+# ---------------------------------------------------------------------------
+
+def fuzzy_dedup(new_item: dict, existing_items: list[dict]) -> bool:
+    """Return True if *new_item* is a duplicate of any item in *existing_items*.
+
+    Criteria: title word overlap > threshold AND same kabupaten AND within 24 hours.
+    """
+    new_title = new_item.get("title", "")
+    new_kab = new_item.get("kabupaten")
+    new_time = new_item.get("occurred_at")
+
+    for existing in existing_items:
+        # Same kabupaten required (both must be non-None and equal)
+        if new_kab and existing.get("kabupaten") != new_kab:
+            continue
+        # Skip if neither has a kabupaten — can't filter
+        if not new_kab and not existing.get("kabupaten"):
+            continue
+
+        # Within 24 hours required
+        ex_time = existing.get("occurred_at")
+        if new_time and ex_time:
+            delta = abs((new_time - ex_time).total_seconds())
+            if delta > 86400:  # 24 hours
+                continue
+        elif (new_time is None) != (ex_time is None):
+            # One has time, other doesn't — still allow word comparison
+            pass
+
+        # Fuzzy title match
+        similarity = _word_overlap_ratio(new_title, existing.get("title", ""))
+        if similarity > FUZZY_DEDUP_THRESHOLD:
+            return True
+
+    return False
+
+
+# ---------------------------------------------------------------------------
+# Location detection
+# ---------------------------------------------------------------------------
+
 def detect_kabupaten(text: str) -> Optional[str]:
     """Detect kabupaten/kota from text."""
     text_lower = text.lower()
@@ -134,6 +205,36 @@ def detect_kabupaten(text: str) -> Optional[str]:
             return kabupaten
     return None
 
+
+def detect_kecamatan(text: str, kabupaten: Optional[str]) -> Optional[str]:
+    """Detect kecamatan from text given an already-detected kabupaten.
+
+    Looks up the kecamatan list from LAMPUNG_LOCATIONS for the given kabupaten
+    and checks if any kecamatan name appears in the text.
+    Only called after detect_kabupaten has returned a result.
+    """
+    if not kabupaten:
+        return None
+
+    kecamatan_list = LAMPUNG_LOCATIONS.get(kabupaten, [])
+    if not kecamatan_list:
+        return None
+
+    text_lower = text.lower()
+
+    # Check longest kecamatan names first to avoid partial-match issues
+    # e.g., match "Kotabumi Utara" before "Kotabumi"
+    sorted_kecamatan = sorted(kecamatan_list, key=lambda k: len(k), reverse=True)
+    for kecamatan in sorted_kecamatan:
+        if kecamatan.lower() in text_lower:
+            return kecamatan
+
+    return None
+
+
+# ---------------------------------------------------------------------------
+# Severity / Category detection
+# ---------------------------------------------------------------------------
 
 def detect_severity(text: str) -> str:
     """Detect severity — berdasarkan dampak gangguan telekom."""
@@ -240,12 +341,16 @@ def detect_category(text: str) -> str:
     return "lainnya"
 
 
+# ---------------------------------------------------------------------------
+# RSS fetchers
+# ---------------------------------------------------------------------------
+
 async def fetch_google_news(query: str, category: str) -> list[dict]:
     """Fetch articles from Google News RSS."""
     results = []
     try:
         url = f"https://news.google.com/rss/search?q={query.replace(' ', '+')}&hl=id&gl=ID&ceid=ID:id"
-        async with httpx.AsyncClient(timeout=15, follow_redirects=True) as client:
+        async with httpx.AsyncClient(timeout=httpx.Timeout(connect=5.0, read=10.0, write=5.0, pool=5.0), follow_redirects=True) as client:
             resp = await client.get(url)
             resp.raise_for_status()
 
@@ -267,6 +372,9 @@ async def fetch_google_news(query: str, category: str) -> list[dict]:
             if "lampung" not in full_text.lower():
                 continue
 
+            kab = detect_kabupaten(full_text)
+            kec = detect_kecamatan(full_text, kab)
+
             results.append({
                 "title": title,
                 "description": summary[:500],
@@ -275,7 +383,8 @@ async def fetch_google_news(query: str, category: str) -> list[dict]:
                 "source": f"Google News - {source_name}",
                 "source_url": link,
                 "source_id": source_id,
-                "kabupaten": detect_kabupaten(full_text),
+                "kabupaten": kab,
+                "kecamatan": kec,
                 "province": "Lampung",
                 "occurred_at": pub_date,
             })
@@ -289,7 +398,7 @@ async def fetch_local_rss(feed_name: str, feed_url: str) -> list[dict]:
     """Fetch articles from local RSS feeds."""
     results = []
     try:
-        async with httpx.AsyncClient(timeout=15, follow_redirects=True) as client:
+        async with httpx.AsyncClient(timeout=httpx.Timeout(connect=5.0, read=10.0, write=5.0, pool=5.0), follow_redirects=True) as client:
             resp = await client.get(feed_url)
             resp.raise_for_status()
 
@@ -317,6 +426,9 @@ async def fetch_local_rss(feed_name: str, feed_url: str) -> list[dict]:
 
             source_id = generate_source_id(title, feed_name)
 
+            kab = detect_kabupaten(full_text)
+            kec = detect_kecamatan(full_text, kab)
+
             results.append({
                 "title": title,
                 "description": summary[:500],
@@ -325,7 +437,8 @@ async def fetch_local_rss(feed_name: str, feed_url: str) -> list[dict]:
                 "source": feed_name,
                 "source_url": entry.get("link", ""),
                 "source_id": source_id,
-                "kabupaten": detect_kabupaten(full_text),
+                "kabupaten": kab,
+                "kecamatan": kec,
                 "province": "Lampung",
                 "occurred_at": pub_date,
             })
@@ -337,27 +450,44 @@ async def fetch_local_rss(feed_name: str, feed_url: str) -> list[dict]:
 
 async def fetch_all_news() -> list[dict]:
     """Fetch news from all configured sources."""
+    start_time = time.monotonic()
     all_results = []
 
-    # Google News queries
+    # Google News queries — rate limited (1 second between requests)
+    query_count = 0
     for category, queries in NEWS_QUERIES.items():
         for query in queries:
+            if query_count > 0:
+                await asyncio.sleep(GOOGLE_NEWS_RATE_LIMIT_SECONDS)
             results = await fetch_google_news(query, category)
             all_results.extend(results)
+            query_count += 1
 
-    # Local RSS feeds
+    # Local RSS feeds (no rate limit — single feed)
     for name, url in LOCAL_RSS_FEEDS.items():
         results = await fetch_local_rss(name, url)
         all_results.extend(results)
 
-    # Deduplicate by source_id
+    # Step 1: Exact dedup by source_id
     seen = set()
-    unique_results = []
+    source_id_unique = []
     for r in all_results:
         sid = r.get("source_id", "")
         if sid and sid not in seen:
             seen.add(sid)
+            source_id_unique.append(r)
+
+    # Step 2: Fuzzy dedup — remove near-duplicates
+    # (same kabupaten + similar title + within 24 hours)
+    unique_results = []
+    for r in source_id_unique:
+        if not fuzzy_dedup(r, unique_results):
             unique_results.append(r)
 
-    logger.info(f"Fetched {len(unique_results)} unique news articles")
+    elapsed = time.monotonic() - start_time
+    logger.info(
+        f"Fetched {len(unique_results)} unique news articles "
+        f"(from {len(all_results)} total, {query_count} Google News queries) "
+        f"in {elapsed:.1f}s"
+    )
     return unique_results
