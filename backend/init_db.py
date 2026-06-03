@@ -1,4 +1,6 @@
 """Initialize database and create/update default superadmin."""
+import os
+from pathlib import Path
 from backend.core.database import init_db, SessionLocal
 from backend.core.security import get_password_hash
 from backend.core.config import get_settings
@@ -23,9 +25,9 @@ def seed_admin():
                 changed = True
             if changed:
                 db.commit()
-                print(f"✅ User '{settings.ADMIN_USERNAME}' di-update ke superadmin")
+                print(f"[OK] User '{settings.ADMIN_USERNAME}' di-update ke superadmin")
             else:
-                print(f"ℹ️  User '{settings.ADMIN_USERNAME}' sudah ada, skip.")
+                print(f"[INFO] User '{settings.ADMIN_USERNAME}' sudah ada, skip.")
         else:
             # Cek apakah ada user lama dengan role superadmin (dari default sebelumnya)
             old_admin = db.query(User).filter(User.role == "superadmin").first()
@@ -36,12 +38,12 @@ def seed_admin():
                     old_admin.hashed_password = get_password_hash(settings.ADMIN_PASSWORD)
                     old_admin.email = settings.ADMIN_EMAIL or old_admin.email
                     db.commit()
-                    print(f"✅ User '{old_admin.username}' di-rename ke '{settings.ADMIN_USERNAME}' & password di-update")
+                    print(f"[OK] User '{old_admin.username}' di-rename ke '{settings.ADMIN_USERNAME}' & password di-update")
                 else:
                     # Username sama, update password saja
                     old_admin.hashed_password = get_password_hash(settings.ADMIN_PASSWORD)
                     db.commit()
-                    print(f"✅ Password user '{settings.ADMIN_USERNAME}' di-update dari .env")
+                    print(f"[OK] Password user '{settings.ADMIN_USERNAME}' di-update dari .env")
             else:
                 # Belum ada superadmin sama sekali, buat baru
                 admin = User(
@@ -53,15 +55,20 @@ def seed_admin():
                 )
                 db.add(admin)
                 db.commit()
-                print(f"✅ Superadmin '{settings.ADMIN_USERNAME}' berhasil dibuat")
+                print(f"[OK] Superadmin '{settings.ADMIN_USERNAME}' berhasil dibuat")
     finally:
         db.close()
 
 
 if __name__ == "__main__":
-    print("🔧 Initializing database...")
+    print("--- Initializing database...")
+
+    # Buat folder data/ jika belum ada
+    data_dir = Path(__file__).resolve().parent.parent / "data"
+    data_dir.mkdir(parents=True, exist_ok=True)
+
     init_db()
-    print("✅ Database tables created")
-    print("🔧 Creating/updating superadmin...")
+    print("[OK] Database tables created")
+    print("--- Creating/updating superadmin...")
     seed_admin()
-    print("✅ Initialization complete!")
+    print("[OK] Initialization complete!")
