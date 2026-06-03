@@ -90,6 +90,9 @@ SEVERITY_KEYWORDS = {
 # ---------------------------------------------------------------------------
 # Negative keywords — filter out irrelevant articles during scraping
 # ---------------------------------------------------------------------------
+# Maximum age for scraped articles (days). Older articles are skipped.
+MAX_ARTICLE_AGE_DAYS = 30  # 1 bulan — realistis untuk monitoring
+
 NEGATIVE_KEYWORDS = [
     # Weather forecasts (not disasters)
     "prakiraan cuaca", "prediksi cuaca", "cuaca hari ini",
@@ -555,6 +558,10 @@ async def fetch_google_news(query: str, category: str) -> list[dict]:
             if _is_negative_match(full_text):
                 continue
 
+            # Skip old articles (>14 days)
+            if pub_date and (datetime.now(WIB) - pub_date).days > MAX_ARTICLE_AGE_DAYS:
+                continue
+
             kab = detect_kabupaten(full_text)
             kec = detect_kecamatan(full_text, kab)
 
@@ -606,6 +613,10 @@ async def fetch_local_rss(feed_name: str, feed_url: str) -> list[dict]:
 
             # Filter out irrelevant articles
             if _is_negative_match(f"{title} {summary}"):
+                continue
+
+            # Skip old articles (>14 days)
+            if pub_date and (datetime.now(WIB) - pub_date).days > MAX_ARTICLE_AGE_DAYS:
                 continue
 
             pub_date = None
