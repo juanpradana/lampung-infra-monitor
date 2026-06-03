@@ -53,10 +53,13 @@ class TelegramNotifier:
         }
 
         category_emoji = {
-            "bencana": "🌊",
-            "gangguan_listrik": "⚡",
             "gangguan_telekomunikasi": "📡",
-            "infrastruktur": "🏗️",
+            "gangguan_bts": "🗼",
+            "gangguan_fiber": "🔗",
+            "gangguan_microwave": "📶",
+            "gangguan_internet": "🌐",
+            "gangguan_listrik": "⚡",
+            "bencana": "🌊",
             "cuaca_ekstrem": "🌪️",
             "lainnya": "📌",
         }

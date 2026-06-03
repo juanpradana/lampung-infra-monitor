@@ -6,10 +6,13 @@ import enum
 
 
 class EventCategory(str, enum.Enum):
-    BENCANA = "bencana"
-    GANGGUAN_LISTRIK = "gangguan_listrik"
     GANGGUAN_TELEKOMUNIKASI = "gangguan_telekomunikasi"
-    INFRASTRUKTUR = "infrastruktur"
+    GANGGUAN_BTS = "gangguan_bts"
+    GANGGUAN_FIBER = "gangguan_fiber"
+    GANGGUAN_MICROWAVE = "gangguan_microwave"
+    GANGGUAN_INTERNET = "gangguan_internet"
+    GANGGUAN_LISTRIK = "gangguan_listrik"
+    BENCANA = "bencana"
     CUACA_EKSTREM = "cuaca_ekstrem"
     LAINNYA = "lainnya"
 
@@ -103,11 +106,7 @@ LAMPUNG_LOCATIONS = {
         "Karya Penggawa", "Way Krui", "Lemong", "Bengkunat",
         "Bengkunat Belimbing", "Ngambur", "Ngaras", "Bangkunat"
     ],
-    "Lampung Timur": [
-        "Sukadana", "Labuhan Maringgai", "Way Jepara", "Batanghari",
-        "Pekalongan", "Sekampung", "Sekampung Udik", "Margatiga",
-        "Jabung", "Braja Selebah", "Purbolinggo", "Raman Utara"
-    ],
+
 }
 
 

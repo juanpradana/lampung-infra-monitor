@@ -25,11 +25,14 @@
             <label for="filterCategory" class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Kategori</label>
             <select id="filterCategory" class="input select" aria-label="Filter kategori">
                 <option value="">Semua</option>
+                <option value="gangguan_telekomunikasi">Gangguan Telkom</option>
+                <option value="gangguan_bts">Gangguan BTS</option>
+                <option value="gangguan_fiber">Gangguan Fiber</option>
+                <option value="gangguan_microwave">Gangguan Microwave</option>
+                <option value="gangguan_internet">Gangguan Internet</option>
+                <option value="gangguan_listrik">Gangguan Listrik</option>
                 <option value="bencana">Bencana</option>
-                <option value="gangguan_listrik">Listrik</option>
-                <option value="gangguan_telekomunikasi">Telkom</option>
-                <option value="infrastruktur">Infra</option>
-                <option value="cuaca_ekstrem">Cuaca</option>
+                <option value="cuaca_ekstrem">Cuaca Ekstrem</option>
                 <option value="lainnya">Lainnya</option>
             </select>
         </div>
@@ -199,7 +202,7 @@ let currentPage = 1;
 let totalPages = 1;
 let timelineChart, categoryChart, severityChart;
 
-const CATEGORY_LABELS = {'bencana':'Bencana','gangguan_listrik':'Listrik','gangguan_telekomunikasi':'Telkom','infrastruktur':'Infra','cuaca_ekstrem':'Cuaca','lainnya':'Lainnya'};
+const CATEGORY_LABELS = {'gangguan_telekomunikasi':'Telkom','gangguan_bts':'BTS','gangguan_fiber':'Fiber','gangguan_microwave':'Microwave','gangguan_internet':'Internet','gangguan_listrik':'Listrik','bencana':'Bencana','cuaca_ekstrem':'Cuaca','lainnya':'Lainnya'};
 const SEVERITY_COLORS = {'critical':'#ef4444','high':'#f97316','medium':'#eab308','low':'#22c55e'};
 const STATUS_BADGES = {'active':'badge badge-active','monitoring':'badge badge-monitoring','resolved':'badge badge-resolved','closed':'badge badge-closed'};
 const SEV_BADGES = {'critical':'badge badge-critical','high':'badge badge-high','medium':'badge badge-medium','low':'badge badge-low'};
@@ -241,7 +244,7 @@ async function loadCategories(days) {
         if (categoryChart) categoryChart.destroy();
         categoryChart = new Chart(document.getElementById('categoryChart').getContext('2d'), {
             type: 'doughnut',
-            data: { labels: c.map(x=>CATEGORY_LABELS[x.category]||x.category), datasets: [{ data: c.map(x=>x.count), backgroundColor: ['#3b82f6','#ef4444','#f59e0b','#10b981','#8b5cf6','#6b7280'], borderColor: getComputedStyle(document.documentElement).getPropertyValue('--surface').trim() || '#ffffff', borderWidth: 2 }] },
+            data: { labels: c.map(x=>CATEGORY_LABELS[x.category]||x.category), datasets: [{ data: c.map(x=>x.count), backgroundColor: ['#3b82f6','#0ea5e9','#06b6d4','#14b8a6','#f59e0b','#ef4444','#8b5cf6','#64748b','#94a3b8'], borderColor: getComputedStyle(document.documentElement).getPropertyValue('--surface').trim() || '#ffffff', borderWidth: 2 }] },
             options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: getComputedStyle(document.documentElement).getPropertyValue('--ink-secondary').trim() || '#475569', padding: 12, font: { size: 11 } } } } }
         });
     } catch(e) { console.error(e); }

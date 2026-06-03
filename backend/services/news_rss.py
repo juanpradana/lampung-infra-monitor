@@ -10,35 +10,53 @@ import re
 
 logger = logging.getLogger(__name__)
 
-# Google News RSS queries for Lampung
 NEWS_QUERIES = {
-    "telekomunikasi": [
-        "gangguan internet lampung",
+    "gangguan_telekomunikasi": [
+        "gangguan telekomunikasi lampung",
+        "gangguan jaringan telekomunikasi lampung",
+        "layanan telekomunikasi terganggu lampung",
+        "Telkom gangguan lampung",
+        "IndiHome gangguan lampung",
+        "provider gangguan lampung",
+    ],
+    "gangguan_bts": [
+        "BTS mati lampung",
         "BTS rusak lampung",
+        "tower telekomunikasi roboh lampung",
+        "tower BTS terbakar lampung",
+        "BTS tower listrik padam lampung",
+    ],
+    "gangguan_fiber": [
+        "fiber optik putus lampung",
+        "kabel optik putus lampung",
+        "FO terputus lampung",
+        "jaringan kabel putus lampung",
+    ],
+    "gangguan_microwave": [
+        "microwave link gangguan lampung",
+        "backhaul gangguan lampung",
+        "link radio terganggu lampung",
+    ],
+    "gangguan_internet": [
+        "gangguan internet lampung",
+        "internet mati lampung",
         "sinyal hilang lampung",
         "jaringan putus lampung",
-        "fiber optik lampung",
-        "tower roboh lampung",
+        "sinyal lemah lampung",
+        "internet lambat lampung",
     ],
-    "listrik": [
+    "gangguan_listrik": [
         "listrik padam lampung",
         "blackout lampung",
         "PLN mati lampung",
         "pemadaman listrik lampung",
     ],
     "bencana": [
-        "banjir lampung",
-        "longsor lampung",
-        "gempa lampung",
-        "bencana alam lampung",
-        "puting beliung lampung",
-        "cuaca ekstrem lampung",
-        "tsunami lampung",
-    ],
-    "infrastruktur": [
-        "infrastruktur rusak lampung",
-        "jalan putus lampung",
-        "jembatan rusak lampung",
+        "banjir lampung tower",
+        "longsor lampung jaringan",
+        "gempa lampung menara",
+        "puting beliung lampung BTS",
+        "bencana lampung telekomunikasi",
     ],
 }
 
@@ -127,16 +145,29 @@ def detect_severity(text: str) -> str:
 
 
 def detect_category(text: str) -> str:
-    """Detect category from text keywords."""
+    """Detect category — fokus infrastruktur digital & telekomunikasi."""
     text_lower = text.lower()
-    if any(w in text_lower for w in ["gempa", "tsunami", "longsor", "banjir", "bencana", "puting beliung"]):
-        return "bencana"
+    # Gangguan telekomunikasi spesifik
+    if any(w in text_lower for w in ["internet", "sinyal", "BTS", "tower", "fiber", "jaringan", "telekomunikasi", "IndiHome", "Telkom", "provider"]):
+        return "gangguan_telekomunikasi"
+    # BTS & Tower
+    if any(w in text_lower for w in ["BTS", "tower telekomunikasi", "tower listrik", "menara seluler", "panel surya BTS"]):
+        return "gangguan_bts"
+    # Fiber optik
+    if any(w in text_lower for w in ["fiber optik", "kabel optik", "FO terputus", "kabel tembaga"]):
+        return "gangguan_fiber"
+    # Microwave & backhaul
+    if any(w in text_lower for w in ["microwave", "backhaul", "link radio", "point to point"]):
+        return "gangguan_microwave"
+    # Internet (general)
+    if any(w in text_lower for w in ["internet", "sinyal hilang", "sinyal lemah", "jaringan putus"]):
+        return "gangguan_internet"
+    # Listrik (penyebab gangguan telekom)
     if any(w in text_lower for w in ["listrik", "padam", "blackout", "PLN"]):
         return "gangguan_listrik"
-    if any(w in text_lower for w in ["internet", "sinyal", "BTS", "tower", "fiber", "jaringan", "telekomunikasi"]):
-        return "gangguan_telekomunikasi"
-    if any(w in text_lower for w in ["infrastruktur", "jalan", "jembatan"]):
-        return "infrastruktur"
+    # Bencana (hanya jika relevan dengan infrastruktur telekom)
+    if any(w in text_lower for w in ["gempa", "tsunami", "longsor", "banjir", "bencana", "puting beliung"]):
+        return "bencana"
     return "lainnya"
 
 
@@ -201,8 +232,10 @@ async def fetch_local_rss(feed_name: str, feed_url: str) -> list[dict]:
             # Only infrastructure-related
             relevant_keywords = [
                 "gangguan", "padam", "listrik", "internet", "sinyal", "BTS",
-                "tower", "banjir", "longsor", "gempa", "bencana", "rusak",
-                "putus", "infrastruktur", "telekomunikasi", "jaringan"
+                "tower", "telekomunikasi", "jaringan", "fiber", "optik",
+                "microwave", "backhaul", "IndiHome", "Telkom", "provider",
+                "seluler", "menara", "kabel", "banjir", "longsor", "gempa",
+                "bencana", "rusak", "putus",
             ]
 
             full_text = f"{title} {summary}".lower()
