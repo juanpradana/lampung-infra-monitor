@@ -1,0 +1,736 @@
+{% extends "base.html" %}
+{% block title %}Aduan — {{ app_name }}{% endblock %}
+
+{% block content %}
+
+{# ─── Page Header ─────────────────────────────────────────────────────── #}
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 sm:mb-6 animate-fade-in-up">
+    <div>
+        <h2 class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100">Aduan</h2>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Laporan gangguan layanan telekomunikasi</p>
+    </div>
+    <button onclick="openCreateModal()" class="btn btn-primary" aria-label="Buat aduan baru">
+        <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="5" y2="19"/><line x1="5" x2="19" y1="12" y2="12"/></svg>
+        Buat Aduan
+    </button>
+</div>
+
+{# ─── Stat Cards ──────────────────────────────────────────────────────── #}
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6 stagger">
+    <!-- Total -->
+    <div class="stat-card" data-color="blue">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Total</p>
+                <p class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100" id="statTotal">-</p>
+            </div>
+            <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center" style="background: var(--brand-100);">
+                <svg class="w-5 h-5 sm:w-6 sm:h-6" style="color: var(--brand-600);" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8Z"/><path d="M15 3v4a2 2 0 0 0 2 2h4"/></svg>
+            </div>
+        </div>
+    </div>
+    <!-- Diterima -->
+    <div class="stat-card" data-color="orange">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Diterima</p>
+                <p class="text-2xl sm:text-3xl font-bold" style="color: var(--warning);" id="statDiterima">-</p>
+            </div>
+            <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center" style="background: var(--warning-bg);">
+                <svg class="w-5 h-5 sm:w-6 sm:h-6" style="color: var(--warning);" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
+        </div>
+    </div>
+    <!-- Diproses -->
+    <div class="stat-card" data-color="blue">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Diproses</p>
+                <p class="text-2xl sm:text-3xl font-bold" style="color: var(--info);" id="statDiproses">-</p>
+            </div>
+            <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center" style="background: var(--info-bg);">
+                <svg class="w-5 h-5 sm:w-6 sm:h-6" style="color: var(--info);" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+            </div>
+        </div>
+    </div>
+    <!-- Selesai -->
+    <div class="stat-card" data-color="green">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Selesai</p>
+                <p class="text-2xl sm:text-3xl font-bold" style="color: var(--success);" id="statSelesai">-</p>
+            </div>
+            <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center" style="background: var(--success-bg);">
+                <svg class="w-5 h-5 sm:w-6 sm:h-6" style="color: var(--success);" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# ─── Filters ────────────────────────────────────────────────────────── #}
+<div class="card p-3 sm:p-4 mb-4 sm:mb-6 animate-fade-in-up">
+    <div class="grid grid-cols-2 sm:flex sm:flex-wrap sm:items-end gap-3 sm:gap-4">
+        <div class="col-span-2 sm:flex-1 sm:min-w-[140px]">
+            <label for="filterStatus" class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Status</label>
+            <select id="filterStatus" class="input select" aria-label="Filter status">
+                <option value="">Semua</option>
+                <option value="diterima">Diterima</option>
+                <option value="diproses">Diproses</option>
+                <option value="ditindaklanjuti">Ditindaklanjuti</option>
+                <option value="selesai">Selesai</option>
+                <option value="ditolak">Ditolak</option>
+            </select>
+        </div>
+        <div class="col-span-2 sm:flex-1 sm:min-w-[140px]">
+            <label for="filterKategori" class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Kategori</label>
+            <select id="filterKategori" class="input select" aria-label="Filter kategori">
+                <option value="">Semua</option>
+                <option value="gangguan_sinyal">Gangguan Sinyal</option>
+                <option value="gangguan_internet">Gangguan Internet</option>
+                <option value="gangguan_bts">Gangguan BTS</option>
+                <option value="gangguan_fiber">Gangguan Fiber</option>
+                <option value="gangguan_listrik">Gangguan Listrik</option>
+                <option value="gangguan_lain">Gangguan Lain</option>
+            </select>
+        </div>
+        <div class="col-span-2 sm:flex-1 sm:min-w-[140px]">
+            <label for="filterKeparahan" class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Keparahan</label>
+            <select id="filterKeparahan" class="input select" aria-label="Filter keparahan">
+                <option value="">Semua</option>
+                <option value="rendah">Rendah</option>
+                <option value="sedang">Sedang</option>
+                <option value="tinggi">Tinggi</option>
+                <option value="kritis">Kritis</option>
+            </select>
+        </div>
+        <div class="col-span-2 sm:flex-1 sm:min-w-[160px]">
+            <label for="filterSearch" class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Cari</label>
+            <input type="text" id="filterSearch" placeholder="Cari aduan..." class="input" aria-label="Cari aduan">
+        </div>
+        <div class="col-span-2 sm:col-auto">
+            <button onclick="loadAduanList()" class="btn btn-ghost w-full sm:w-auto" aria-label="Muat ulang data aduan">
+                <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>
+                Refresh
+            </button>
+        </div>
+    </div>
+</div>
+
+{# ─── Aduan List: Desktop Table ──────────────────────────────────────── #}
+<div class="hidden sm:block card">
+    <div class="p-4 sm:p-5 border-b border-gray-200 dark:border-slate-700 flex items-center justify-between">
+        <h3 class="text-base sm:text-lg font-semibold text-gray-800 dark:text-gray-200">Daftar Aduan</h3>
+        <span id="aduanCount" class="text-sm text-gray-500 dark:text-gray-400">-</span>
+    </div>
+    <div class="table-wrapper">
+        <table class="table" aria-label="Daftar aduan">
+            <thead>
+                <tr>
+                    <th scope="col">Nomor</th>
+                    <th scope="col">Judul</th>
+                    <th scope="col">Pelapor</th>
+                    <th scope="col">Kategori</th>
+                    <th scope="col">Keparahan</th>
+                    <th scope="col">Lokasi</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Tanggal</th>
+                    <th scope="col">Aksi</th>
+                </tr>
+            </thead>
+            <tbody id="aduanTable">
+                <tr><td colspan="9" class="px-4 py-8 text-center text-gray-400 dark:text-gray-500">Memuat...</td></tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="p-3 sm:p-4 border-t border-gray-200 dark:border-slate-700 flex items-center justify-between">
+        <button id="prevPage" onclick="changePage(-1)" class="btn btn-ghost btn-sm" disabled aria-label="Halaman sebelumnya">
+            <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+            Prev
+        </button>
+        <span id="pageInfo" class="text-xs sm:text-sm text-gray-500 dark:text-gray-400">-</span>
+        <button id="nextPage" onclick="changePage(1)" class="btn btn-ghost btn-sm" disabled aria-label="Halaman berikutnya">
+            Next
+            <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+        </button>
+    </div>
+</div>
+
+{# ─── Aduan List: Mobile Cards ────────────────────────────────────── #}
+<div class="sm:hidden card">
+    <div class="p-3 border-b border-gray-200 dark:border-slate-700 flex items-center justify-between">
+        <h3 class="text-base font-semibold text-gray-800 dark:text-gray-200">Aduan</h3>
+        <span id="aduanCountMobile" class="text-xs text-gray-500 dark:text-gray-400">-</span>
+    </div>
+    <div id="aduanCards">
+        <p class="p-4 text-center text-gray-400 dark:text-gray-500 text-sm">Memuat...</p>
+    </div>
+    <div class="p-3 border-t border-gray-200 dark:border-slate-700 flex items-center justify-between">
+        <button id="prevPageMobile" onclick="changePage(-1)" class="btn btn-ghost btn-sm" disabled aria-label="Halaman sebelumnya">
+            <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+            Prev
+        </button>
+        <span id="pageInfoMobile" class="text-xs text-gray-500 dark:text-gray-400">-</span>
+        <button id="nextPageMobile" onclick="changePage(1)" class="btn btn-ghost btn-sm" disabled aria-label="Halaman berikutnya">
+            Next
+            <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+        </button>
+    </div>
+</div>
+
+{# ─── Create Aduan Modal ────────────────────────────────────────────── #}
+<div id="createModal" class="modal-backdrop" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="createModalTitle">
+    <div class="modal-content" style="padding: 24px; max-width: 560px;">
+        <div class="flex items-center justify-between mb-4">
+            <h3 id="createModalTitle" class="text-lg font-semibold text-gray-900 dark:text-gray-100">Buat Aduan Baru</h3>
+            <button onclick="closeCreateModal()" class="btn btn-ghost btn-icon btn-sm" aria-label="Tutup">
+                <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" x2="6" y1="6" y2="18"/><line x1="6" x2="18" y1="6" y2="18"/></svg>
+            </button>
+        </div>
+        <form id="createForm" class="flex flex-col gap-4">
+            <div>
+                <label for="createJudul" class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Judul <span class="text-red-500">*</span></label>
+                <input type="text" id="createJudul" required class="input" placeholder="Judul aduan" maxlength="300" autocomplete="off">
+            </div>
+            <div>
+                <label for="createDeskripsi" class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Deskripsi</label>
+                <textarea id="createDeskripsi" rows="3" class="input" placeholder="Jelaskan gangguan yang dialami..."></textarea>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label for="createPelaporNama" class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Nama Pelapor <span class="text-red-500">*</span></label>
+                    <input type="text" id="createPelaporNama" required class="input" placeholder="Nama lengkap" autocomplete="name">
+                </div>
+                <div>
+                    <label for="createPelaporTelp" class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Telepon</label>
+                    <input type="tel" id="createPelaporTelp" class="input" placeholder="08xxxxxxxxxx" autocomplete="tel">
+                </div>
+            </div>
+            <div>
+                <label for="createPelaporEmail" class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Email</label>
+                <input type="email" id="createPelaporEmail" class="input" placeholder="email@contoh.com" autocomplete="email">
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                    <label for="createKategori" class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Kategori <span class="text-red-500">*</span></label>
+                    <select id="createKategori" class="input select" required>
+                        <option value="gangguan_sinyal">Gangguan Sinyal</option>
+                        <option value="gangguan_internet">Gangguan Internet</option>
+                        <option value="gangguan_bts">Gangguan BTS</option>
+                        <option value="gangguan_fiber">Gangguan Fiber</option>
+                        <option value="gangguan_listrik">Gangguan Listrik</option>
+                        <option value="gangguan_lain" selected>Gangguan Lain</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="createKeparahan" class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Keparahan <span class="text-red-500">*</span></label>
+                    <select id="createKeparahan" class="input select" required>
+                        <option value="rendah">Rendah</option>
+                        <option value="sedang" selected>Sedang</option>
+                        <option value="tinggi">Tinggi</option>
+                        <option value="kritis">Kritis</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="createSumber" class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Sumber</label>
+                    <select id="createSumber" class="input select">
+                        <option value="masyarakat" selected>Masyarakat</option>
+                        <option value="internal">Internal</option>
+                        <option value="otomatis">Otomatis</option>
+                    </select>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                    <label for="createKabupaten" class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Kabupaten/Kota</label>
+                    <input type="text" id="createKabupaten" class="input" placeholder="Kabupaten/Kota">
+                </div>
+                <div>
+                    <label for="createKecamatan" class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Kecamatan</label>
+                    <input type="text" id="createKecamatan" class="input" placeholder="Kecamatan">
+                </div>
+                <div>
+                    <label for="createKelurahan" class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Kelurahan</label>
+                    <input type="text" id="createKelurahan" class="input" placeholder="Kelurahan">
+                </div>
+            </div>
+            <div>
+                <label for="createLokasiDetail" class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Alamat Detail</label>
+                <input type="text" id="createLokasiDetail" class="input" placeholder="Alamat spesifik lokasi gangguan">
+            </div>
+            <div class="flex gap-3 pt-2">
+                <button type="button" onclick="closeCreateModal()" class="btn flex-1" style="background: var(--border-light); color: var(--ink-secondary);" aria-label="Batal">Batal</button>
+                <button type="submit" class="btn btn-primary flex-1" aria-label="Simpan aduan">
+                    <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                    Simpan
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{# ─── Detail/Edit Aduan Modal ────────────────────────────────────────── #}
+<div id="detailModal" class="modal-backdrop" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="detailModalTitle">
+    <div class="modal-content" style="padding: 24px; max-width: 640px;">
+        <div class="flex items-center justify-between mb-4">
+            <h3 id="detailModalTitle" class="text-lg font-semibold text-gray-900 dark:text-gray-100">Detail Aduan</h3>
+            <button onclick="closeDetailModal()" class="btn btn-ghost btn-icon btn-sm" aria-label="Tutup">
+                <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" x2="6" y1="6" y2="18"/><line x1="6" x2="18" y1="6" y2="18"/></svg>
+            </button>
+        </div>
+        <div id="detailContent" class="flex flex-col gap-4">
+            <p class="text-gray-400 dark:text-gray-500 text-sm">Memuat...</p>
+        </div>
+    </div>
+</div>
+
+{# ─── Delete Confirmation Modal ──────────────────────────────────────── #}
+<div id="deleteModal" class="modal-backdrop" style="display: none;" role="alertdialog" aria-modal="true" aria-labelledby="deleteModalTitle">
+    <div class="modal-content" style="padding: 24px; max-width: 400px;">
+        <div class="flex items-center gap-3 mb-3">
+            <div class="w-10 h-10 rounded-full flex items-center justify-center" style="background: var(--danger-bg);">
+                <svg class="w-5 h-5" style="color: var(--danger);" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+            </div>
+            <div>
+                <h4 id="deleteModalTitle" class="font-semibold text-gray-900 dark:text-gray-100">Hapus Aduan</h4>
+                <p class="text-sm text-gray-500 dark:text-gray-400">Tindakan ini tidak dapat dibatalkan.</p>
+            </div>
+        </div>
+        <p id="deleteModalBody" class="text-sm text-gray-600 dark:text-gray-300 mb-4">Apakah Anda yakin ingin menghapus aduan ini?</p>
+        <div class="flex gap-3">
+            <button onclick="closeDeleteModal()" class="btn flex-1" style="background: var(--border-light); color: var(--ink-secondary);" aria-label="Batal hapus">Batal</button>
+            <button id="confirmDeleteBtn" class="btn btn-danger flex-1" aria-label="Ya, hapus">
+                <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                Hapus
+            </button>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentPage = 1;
+let totalPages = 1;
+let deleteTargetId = null;
+let detailTargetId = null;
+
+// ─── Label maps ────────────────────────────────────────────────────────
+const KATEGORI_LABELS = {
+    'gangguan_sinyal': 'Gangguan Sinyal',
+    'gangguan_internet': 'Gangguan Internet',
+    'gangguan_bts': 'Gangguan BTS',
+    'gangguan_fiber': 'Gangguan Fiber',
+    'gangguan_listrik': 'Gangguan Listrik',
+    'gangguan_lain': 'Gangguan Lain',
+};
+
+const KEPARAHAN_BADGES = {
+    'rendah': 'badge badge-low',
+    'sedang': 'badge badge-medium',
+    'tinggi': 'badge badge-high',
+    'kritis': 'badge badge-critical',
+};
+
+const STATUS_BADGES = {
+    'diterima': 'badge badge-monitoring',
+    'diproses': 'badge badge-operator',
+    'ditindaklanjuti': 'badge badge-superadmin',
+    'selesai': 'badge badge-resolved',
+    'ditolak': 'badge badge-closed',
+};
+
+const STATUS_OPTIONS = [
+    { value: 'diterima', label: 'Diterima' },
+    { value: 'diproses', label: 'Diproses' },
+    { value: 'ditindaklanjuti', label: 'Ditindaklanjuti' },
+    { value: 'selesai', label: 'Selesai' },
+    { value: 'ditolak', label: 'Ditolak' },
+];
+
+const SUMBER_LABELS = {
+    'masyarakat': 'Masyarakat',
+    'internal': 'Internal',
+    'otomatis': 'Otomatis',
+};
+
+// ─── Load Stats ────────────────────────────────────────────────────────
+async function loadStats() {
+    try {
+        const data = await apiGet('/api/aduan/stats?days=30');
+        document.getElementById('statTotal').textContent = data.total || 0;
+        document.getElementById('statDiterima').textContent = (data.by_status || {})['diterima'] || 0;
+        document.getElementById('statDiproses').textContent = ((data.by_status || {})['diproses'] || 0) + ((data.by_status || {})['ditindaklanjuti'] || 0);
+        document.getElementById('statSelesai').textContent = data.resolved || 0;
+    } catch(e) {
+        console.error('Stats error:', e);
+    }
+}
+
+// ─── Load Aduan List ───────────────────────────────────────────────────
+async function loadAduanList() {
+    try {
+        const p = new URLSearchParams({ page: currentPage, per_page: 20 });
+        const status = document.getElementById('filterStatus').value;
+        const kategori = document.getElementById('filterKategori').value;
+        const keparahan = document.getElementById('filterKeparahan').value;
+        const q = document.getElementById('filterSearch').value;
+        if (status) p.set('status', status);
+        if (kategori) p.set('kategori', kategori);
+        if (keparahan) p.set('keparahan', keparahan);
+        if (q) p.set('search', q);
+
+        const data = await apiGet('/api/aduan?' + p);
+        totalPages = data.pages || 1;
+
+        // Desktop
+        document.getElementById('aduanCount').textContent = data.total + ' aduan';
+        document.getElementById('pageInfo').textContent = data.page + '/' + data.pages;
+        document.getElementById('prevPage').disabled = data.page <= 1;
+        document.getElementById('nextPage').disabled = data.page >= data.pages;
+
+        // Mobile
+        document.getElementById('aduanCountMobile').textContent = data.total + ' aduan';
+        document.getElementById('pageInfoMobile').textContent = data.page + '/' + data.pages;
+        document.getElementById('prevPageMobile').disabled = data.page <= 1;
+        document.getElementById('nextPageMobile').disabled = data.page >= data.pages;
+
+        if (!data.aduan || !data.aduan.length) {
+            const emptyHtml = '<tr><td colspan="9" class="px-4 py-8 text-center text-gray-400 dark:text-gray-500">Tidak ada aduan ditemukan</td></tr>';
+            document.getElementById('aduanTable').innerHTML = emptyHtml;
+            document.getElementById('aduanCards').innerHTML = '<p class="p-4 text-center text-gray-400 dark:text-gray-500 text-sm">Tidak ada aduan ditemukan</p>';
+            return;
+        }
+
+        // Desktop rows
+        document.getElementById('aduanTable').innerHTML = data.aduan.map(a => {
+            const d = a.created_at ? new Date(a.created_at).toLocaleDateString('id-ID', {day:'2-digit',month:'short',year:'numeric'}) : '-';
+            const loc = [a.lokasi_kabupaten, a.lokasi_kecamatan].filter(Boolean).join(', ') || '-';
+            return '<tr>' +
+                '<td class="text-xs font-mono text-gray-500 dark:text-gray-400 whitespace-nowrap">' + (a.nomor || '-') + '</td>' +
+                '<td class="text-sm font-medium text-gray-900 dark:text-gray-100 max-w-[180px] truncate">' + a.judul + '</td>' +
+                '<td class="text-xs text-gray-600 dark:text-gray-400">' + a.pelapor_nama + '</td>' +
+                '<td class="text-xs">' + (KATEGORI_LABELS[a.kategori] || a.kategori) + '</td>' +
+                '<td><span class="' + (KEPARAHAN_BADGES[a.keparahan] || '') + '">' + a.keparahan + '</span></td>' +
+                '<td class="text-xs text-gray-600 dark:text-gray-400 max-w-[120px] truncate">' + loc + '</td>' +
+                '<td><span class="' + (STATUS_BADGES[a.status] || '') + '">' + a.status + '</span></td>' +
+                '<td class="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">' + d + '</td>' +
+                '<td class="whitespace-nowrap">' +
+                    '<button onclick="openDetailModal(' + a.id + ')" class="btn btn-ghost btn-sm" aria-label="Lihat detail aduan ' + a.nomor + '">' +
+                        '<svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>' +
+                    '</button>' +
+                '</td>' +
+            '</tr>';
+        }).join('');
+
+        // Mobile cards
+        document.getElementById('aduanCards').innerHTML = data.aduan.map(a => {
+            const d = a.created_at ? new Date(a.created_at).toLocaleDateString('id-ID', {day:'2-digit',month:'short',year:'numeric'}) : '-';
+            const loc = [a.lokasi_kabupaten, a.lokasi_kecamatan].filter(Boolean).join(', ') || '-';
+            return '<div class="event-card">' +
+                '<div class="flex items-start justify-between gap-2 mb-1">' +
+                    '<span class="text-xs font-mono text-gray-500 dark:text-gray-400">' + (a.nomor || '-') + '</span>' +
+                    '<div class="flex gap-1">' +
+                        '<span class="' + (KEPARAHAN_BADGES[a.keparahan] || '') + '">' + a.keparahan + '</span>' +
+                        '<span class="' + (STATUS_BADGES[a.status] || '') + '">' + a.status + '</span>' +
+                    '</div>' +
+                '</div>' +
+                '<p class="text-sm font-medium text-gray-900 dark:text-gray-100 leading-snug mb-1">' + a.judul + '</p>' +
+                '<div class="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">' +
+                    '<span>' + a.pelapor_nama + ' &middot; ' + loc + '</span>' +
+                    '<button onclick="openDetailModal(' + a.id + ')" class="btn btn-ghost btn-sm px-2 py-1" aria-label="Lihat detail">' +
+                        '<svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>' +
+                    '</button>' +
+                '</div>' +
+            '</div>';
+        }).join('');
+
+    } catch(e) {
+        console.error('List error:', e);
+        document.getElementById('aduanTable').innerHTML = '<tr><td colspan="9" class="px-4 py-8 text-center text-red-400">Gagal memuat data</td></tr>';
+        document.getElementById('aduanCards').innerHTML = '<p class="p-4 text-center text-red-400 text-sm">Gagal memuat data</p>';
+    }
+}
+
+// ─── Pagination ────────────────────────────────────────────────────────
+function changePage(d) {
+    currentPage = Math.max(1, Math.min(totalPages, currentPage + d));
+    loadAduanList();
+}
+
+// ─── Create Modal ──────────────────────────────────────────────────────
+function openCreateModal() {
+    const modal = document.getElementById('createModal');
+    modal.style.display = 'flex';
+    requestAnimationFrame(() => modal.classList.add('open'));
+    const firstInput = modal.querySelector('input');
+    if (firstInput) firstInput.focus();
+}
+
+function closeCreateModal() {
+    const modal = document.getElementById('createModal');
+    modal.classList.remove('open');
+    setTimeout(() => { modal.style.display = 'none'; }, 250);
+    document.getElementById('createForm').reset();
+}
+
+document.getElementById('createForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    try {
+        const payload = {
+            judul: document.getElementById('createJudul').value.trim(),
+            deskripsi: document.getElementById('createDeskripsi').value.trim() || null,
+            pelapor_nama: document.getElementById('createPelaporNama').value.trim(),
+            pelapor_telp: document.getElementById('createPelaporTelp').value.trim() || null,
+            pelapor_email: document.getElementById('createPelaporEmail').value.trim() || null,
+            kategori: document.getElementById('createKategori').value,
+            keparahan: document.getElementById('createKeparahan').value,
+            sumber: document.getElementById('createSumber').value,
+            lokasi_kabupaten: document.getElementById('createKabupaten').value.trim() || null,
+            lokasi_kecamatan: document.getElementById('createKecamatan').value.trim() || null,
+            lokasi_kelurahan: document.getElementById('createKelurahan').value.trim() || null,
+            lokasi_detail: document.getElementById('createLokasiDetail').value.trim() || null,
+        };
+        await apiPost('/api/aduan', payload);
+        closeCreateModal();
+        showToast('Aduan berhasil dibuat', 'success');
+        loadStats();
+        loadAduanList();
+    } catch(err) {
+        showToast('Gagal membuat aduan: ' + err.message, 'error');
+    }
+});
+
+// ─── Detail Modal ──────────────────────────────────────────────────────
+async function openDetailModal(id) {
+    detailTargetId = id;
+    const modal = document.getElementById('detailModal');
+    modal.style.display = 'flex';
+    requestAnimationFrame(() => modal.classList.add('open'));
+    const content = document.getElementById('detailContent');
+    content.innerHTML = '<p class="text-gray-400 dark:text-gray-500 text-sm">Memuat...</p>';
+
+    try {
+        const a = await apiGet('/api/aduan/' + id);
+        document.getElementById('detailModalTitle').textContent = 'Aduan ' + (a.nomor || '#' + a.id);
+
+        const created = a.created_at ? formatDate(a.created_at) : '-';
+        const updated = a.updated_at ? formatDate(a.updated_at) : '-';
+        const resolved = a.resolved_at ? formatDate(a.resolved_at) : '-';
+        const loc = [a.lokasi_kabupaten, a.lokasi_kecamatan, a.lokasi_kelurahan].filter(Boolean).join(', ') || '-';
+
+        let statusOptionsHtml = STATUS_OPTIONS.map(s =>
+            '<option value="' + s.value + '"' + (a.status === s.value ? ' selected' : '') + '>' + s.label + '</option>'
+        ).join('');
+
+        let html = `
+            <div class="grid grid-cols-2 gap-3 text-sm">
+                <div>
+                    <span class="text-xs text-gray-500 dark:text-gray-400">Nomor</span>
+                    <p class="font-mono font-medium text-gray-900 dark:text-gray-100">${a.nomor || '-'}</p>
+                </div>
+                <div>
+                    <span class="text-xs text-gray-500 dark:text-gray-400">Kategori</span>
+                    <p class="font-medium text-gray-900 dark:text-gray-100">${KATEGORI_LABELS[a.kategori] || a.kategori}</p>
+                </div>
+                <div>
+                    <span class="text-xs text-gray-500 dark:text-gray-400">Keparahan</span>
+                    <p><span class="${KEPARAHAN_BADGES[a.keparahan] || ''}">${a.keparahan}</span></p>
+                </div>
+                <div>
+                    <span class="text-xs text-gray-500 dark:text-gray-400">Sumber</span>
+                    <p class="text-gray-900 dark:text-gray-100">${SUMBER_LABELS[a.sumber] || a.sumber}</p>
+                </div>
+            </div>
+
+            <div class="border-t border-gray-200 dark:border-slate-700 pt-3">
+                <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-1">${a.judul}</h4>
+                <p class="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap">${a.deskripsi || 'Tidak ada deskripsi'}</p>
+            </div>
+
+            <div class="border-t border-gray-200 dark:border-slate-700 pt-3">
+                <h4 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Pelapor</h4>
+                <div class="grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                        <span class="text-xs text-gray-500 dark:text-gray-400">Nama</span>
+                        <p class="text-gray-900 dark:text-gray-100">${a.pelapor_nama}</p>
+                    </div>
+                    <div>
+                        <span class="text-xs text-gray-500 dark:text-gray-400">Telepon</span>
+                        <p class="text-gray-900 dark:text-gray-100">${a.pelapor_telp || '-'}</p>
+                    </div>
+                    <div class="col-span-2">
+                        <span class="text-xs text-gray-500 dark:text-gray-400">Email</span>
+                        <p class="text-gray-900 dark:text-gray-100">${a.pelapor_email || '-'}</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="border-t border-gray-200 dark:border-slate-700 pt-3">
+                <h4 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Lokasi</h4>
+                <p class="text-sm text-gray-900 dark:text-gray-100">${loc}</p>
+                ${a.lokasi_detail ? '<p class="text-sm text-gray-600 dark:text-gray-400 mt-1">' + a.lokasi_detail + '</p>' : ''}
+            </div>
+
+            <div class="border-t border-gray-200 dark:border-slate-700 pt-3">
+                <h4 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Penanganan</h4>
+                <p class="text-sm text-gray-900 dark:text-gray-100 whitespace-pre-wrap">${a.penanganan || 'Belum ada penanganan'}</p>
+                ${a.catatan_internal ? '<div class="mt-2 p-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md"><span class="text-xs font-medium text-yellow-700 dark:text-yellow-300">Catatan Internal:</span><p class="text-sm text-yellow-800 dark:text-yellow-200 mt-1 whitespace-pre-wrap">' + a.catatan_internal + '</p></div>' : ''}
+            </div>
+
+            <div class="border-t border-gray-200 dark:border-slate-700 pt-3">
+                <h4 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Status & Waktu</h4>
+                <div class="grid grid-cols-2 gap-3 text-sm">
+                    <div class="col-span-2">
+                        <label for="detailStatus" class="text-xs text-gray-500 dark:text-gray-400">Ubah Status</label>
+                        <select id="detailStatus" class="input select mt-1" onchange="updateAduanStatus(${a.id}, this.value)">
+                            ${statusOptionsHtml}
+                        </select>
+                    </div>
+                    <div>
+                        <span class="text-xs text-gray-500 dark:text-gray-400">Dibuat</span>
+                        <p class="text-gray-900 dark:text-gray-100">${created}</p>
+                    </div>
+                    <div>
+                        <span class="text-xs text-gray-500 dark:text-gray-400">Diperbarui</span>
+                        <p class="text-gray-900 dark:text-gray-100">${updated}</p>
+                    </div>
+                    ${a.resolved_at ? '<div class="col-span-2"><span class="text-xs text-gray-500 dark:text-gray-400">Selesai</span><p class="text-gray-900 dark:text-gray-100">' + resolved + '</p></div>' : ''}
+                </div>
+            </div>
+
+            <div class="flex gap-3 pt-2 border-t border-gray-200 dark:border-slate-700">
+                <button onclick="openEditPenangananModal(${a.id})" class="btn btn-ghost flex-1" aria-label="Edit penanganan">
+                    <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+                    Edit Penanganan
+                </button>
+                <button onclick="openDeleteModal(${a.id}, '${a.nomor || ''}')" class="btn btn-danger flex-1" aria-label="Hapus aduan">
+                    <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                    Hapus
+                </button>
+            </div>
+        `;
+        content.innerHTML = html;
+    } catch(err) {
+        content.innerHTML = '<p class="text-red-400 text-sm">Gagal memuat detail: ' + err.message + '</p>';
+    }
+}
+
+function closeDetailModal() {
+    const modal = document.getElementById('detailModal');
+    modal.classList.remove('open');
+    setTimeout(() => { modal.style.display = 'none'; }, 250);
+    detailTargetId = null;
+}
+
+// ─── Update Status ─────────────────────────────────────────────────────
+async function updateAduanStatus(id, newStatus) {
+    try {
+        await apiPut('/api/aduan/' + id, { status: newStatus });
+        showToast('Status berhasil diubah', 'success');
+        loadStats();
+        loadAduanList();
+    } catch(err) {
+        showToast('Gagal mengubah status: ' + err.message, 'error');
+    }
+}
+
+// ─── Edit Penanganan Modal (inline in detail) ──────────────────────────
+async function openEditPenangananModal(id) {
+    const modal = document.getElementById('detailModal');
+    modal.classList.remove('open');
+    setTimeout(() => { modal.style.display = 'none'; }, 250);
+
+    // Re-fetch to get current data, then show edit form
+    try {
+        const a = await apiGet('/api/aduan/' + id);
+        detailTargetId = id;
+        const editModal = document.getElementById('detailModal');
+        editModal.style.display = 'flex';
+        requestAnimationFrame(() => editModal.classList.add('open'));
+        document.getElementById('detailModalTitle').textContent = 'Edit Penanganan — ' + (a.nomor || '#' + a.id);
+
+        const content = document.getElementById('detailContent');
+        content.innerHTML = `
+            <form id="editPenangananForm" class="flex flex-col gap-4">
+                <div>
+                    <label for="editPenanganan" class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Penanganan / Tindakan</label>
+                    <textarea id="editPenanganan" rows="4" class="input" placeholder="Jelaskan tindakan yang diambil...">${a.penanganan || ''}</textarea>
+                </div>
+                <div>
+                    <label for="editCatatan" class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Catatan Internal</label>
+                    <textarea id="editCatatan" rows="3" class="input" placeholder="Catatan internal tim...">${a.catatan_internal || ''}</textarea>
+                </div>
+                <div class="flex gap-3 pt-2">
+                    <button type="button" onclick="openDetailModal(${id})" class="btn flex-1" style="background: var(--border-light); color: var(--ink-secondary);" aria-label="Batal">Batal</button>
+                    <button type="submit" class="btn btn-primary flex-1" aria-label="Simpan penanganan">
+                        <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                        Simpan
+                    </button>
+                </div>
+            </form>
+        `;
+
+        document.getElementById('editPenangananForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            try {
+                await apiPut('/api/aduan/' + id, {
+                    penanganan: document.getElementById('editPenanganan').value.trim() || null,
+                    catatan_internal: document.getElementById('editCatatan').value.trim() || null,
+                });
+                showToast('Penanganan berhasil diperbarui', 'success');
+                loadAduanList();
+                openDetailModal(id);
+            } catch(err) {
+                showToast('Gagal memperbarui: ' + err.message, 'error');
+            }
+        });
+    } catch(err) {
+        showToast('Gagal memuat data: ' + err.message, 'error');
+    }
+}
+
+// ─── Delete Modal ──────────────────────────────────────────────────────
+function openDeleteModal(id, nomor) {
+    deleteTargetId = id;
+    document.getElementById('deleteModalBody').textContent =
+        'Apakah Anda yakin ingin menghapus aduan ' + (nomor || '#' + id) + '?';
+    const modal = document.getElementById('deleteModal');
+    modal.style.display = 'flex';
+    requestAnimationFrame(() => modal.classList.add('open'));
+}
+
+function closeDeleteModal() {
+    const modal = document.getElementById('deleteModal');
+    modal.classList.remove('open');
+    setTimeout(() => { modal.style.display = 'none'; }, 250);
+    deleteTargetId = null;
+}
+
+document.getElementById('confirmDeleteBtn').addEventListener('click', async () => {
+    if (!deleteTargetId) return;
+    try {
+        await apiDelete('/api/aduan/' + deleteTargetId);
+        closeDeleteModal();
+        closeDetailModal();
+        showToast('Aduan berhasil dihapus', 'success');
+        loadStats();
+        loadAduanList();
+    } catch(err) {
+        showToast('Gagal menghapus: ' + err.message, 'error');
+    }
+});
+
+// ─── Filter event listeners ────────────────────────────────────────────
+document.getElementById('filterStatus').addEventListener('change', () => { currentPage = 1; loadAduanList(); });
+document.getElementById('filterKategori').addEventListener('change', () => { currentPage = 1; loadAduanList(); });
+document.getElementById('filterKeparahan').addEventListener('change', () => { currentPage = 1; loadAduanList(); });
+document.getElementById('filterSearch').addEventListener('keyup', debounce(() => { currentPage = 1; loadAduanList(); }, 500));
+
+// ─── Init ──────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+    loadStats();
+    loadAduanList();
+});
+</script>
+{% endblock %}
