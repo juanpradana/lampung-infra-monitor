@@ -3,7 +3,8 @@ import logging
 import hashlib
 import time
 import asyncio
-from datetime import datetime, timezone
+from backend.core.tz import WIB
+from datetime import datetime, timezone, timedelta
 from typing import Optional
 import httpx
 import feedparser
@@ -363,7 +364,7 @@ async def fetch_google_news(query: str, category: str) -> list[dict]:
 
             pub_date = None
             if hasattr(entry, "published_parsed") and entry.published_parsed:
-                pub_date = datetime(*entry.published_parsed[:6], tzinfo=timezone.utc)
+                pub_date = datetime(*entry.published_parsed[:6], tzinfo=timezone.utc).astimezone(WIB)
 
             full_text = f"{title} {summary}"
             source_id = generate_source_id(title, source_name)
@@ -422,7 +423,7 @@ async def fetch_local_rss(feed_name: str, feed_url: str) -> list[dict]:
 
             pub_date = None
             if hasattr(entry, "published_parsed") and entry.published_parsed:
-                pub_date = datetime(*entry.published_parsed[:6], tzinfo=timezone.utc)
+                pub_date = datetime(*entry.published_parsed[:6], tzinfo=timezone.utc).astimezone(WIB)
 
             source_id = generate_source_id(title, feed_name)
 

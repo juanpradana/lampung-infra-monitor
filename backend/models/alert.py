@@ -1,4 +1,5 @@
 """Alert and notification tracking model."""
+from backend.core.tz import WIB
 from datetime import datetime, timezone
 from sqlalchemy import Column, Integer, String, DateTime, Text, ForeignKey, Boolean
 from backend.core.database import Base
@@ -11,7 +12,7 @@ class Alert(Base):
     event_id = Column(Integer, ForeignKey("events.id"), nullable=True)
     channel = Column(String(50), nullable=False)  # telegram, email, dashboard
     message = Column(Text, nullable=False)
-    sent_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    sent_at = Column(DateTime, default=lambda: datetime.now(WIB))
     success = Column(Boolean, default=True)
     error_message = Column(Text, nullable=True)
 
@@ -32,7 +33,7 @@ class MonitorLog(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     job_name = Column(String(100), nullable=False)
-    started_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    started_at = Column(DateTime, default=lambda: datetime.now(WIB))
     finished_at = Column(DateTime, nullable=True)
     status = Column(String(20), default="running")  # running, success, failed
     events_found = Column(Integer, default=0)

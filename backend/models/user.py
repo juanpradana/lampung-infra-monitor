@@ -1,4 +1,5 @@
 """User model with RBAC."""
+from backend.core.tz import WIB
 from datetime import datetime, timezone
 from sqlalchemy import Column, Integer, String, DateTime, Boolean
 from backend.core.database import Base
@@ -14,8 +15,8 @@ class User(Base):
     hashed_password = Column(String(255), nullable=False)
     role = Column(String(20), nullable=False, default="viewer")  # superadmin, operator, viewer
     is_active = Column(Boolean, default=True)
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
-    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    created_at = Column(DateTime, default=lambda: datetime.now(WIB))
+    updated_at = Column(DateTime, default=lambda: datetime.now(WIB), onupdate=lambda: datetime.now(WIB))
 
     def to_dict(self):
         return {

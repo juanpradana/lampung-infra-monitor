@@ -1,7 +1,8 @@
 """Background scheduler for monitoring jobs."""
 import asyncio
 import logging
-from datetime import date, datetime, timezone
+from backend.core.tz import WIB
+from datetime import datetime, timezone
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 
@@ -40,7 +41,7 @@ def _parse_dt(val):
     if isinstance(val, datetime):
         return val
     if isinstance(val, date):
-        return datetime(val.year, val.month, val.day, tzinfo=timezone.utc)
+        return datetime(val.year, val.month, val.day, tzinfo=WIB)
     if isinstance(val, str):
         # Handle ISO format like "2026-06-01T10:32:23+00:00"
         try:
@@ -101,8 +102,8 @@ def cleanup_stale_logs():
     """
     db = SessionLocal()
     try:
-        cutoff = datetime.now(timezone.utc).timestamp() - STALE_LOG_TIMEOUT
-        cutoff_dt = datetime.fromtimestamp(cutoff, tz=timezone.utc)
+        cutoff = datetime.now(WIB).timestamp() - STALE_LOG_TIMEOUT
+        cutoff_dt = datetime.fromtimestamp(cutoff, tz=WIB)
         stale = (
             db.query(MonitorLog)
             .filter(
@@ -115,7 +116,7 @@ def cleanup_stale_logs():
             for log in stale:
                 log.status = "failed"
                 log.error_message = "Timed out — job exceeded watchdog threshold"
-                log.finished_at = datetime.now(timezone.utc)
+                log.finished_at = datetime.now(WIB)
             _safe_commit(db, "cleanup_stale_logs")
             logger.warning(
                 "Watchdog: marked %d stale 'running' log(s) as 'failed'", len(stale)
@@ -133,7 +134,7 @@ async def _bmkg_job_inner():
     logger.info("Running BMKG check...")
     db = SessionLocal()
     notifier = create_notifier()
-    log = MonitorLog(job_name="bmkg_check", started_at=datetime.now(timezone.utc))
+    log = MonitorLog(job_name="bmkg_check", started_at=datetime.now(WIB))
     db.add(log)
     _safe_commit(db, "bmkg_check: create log")
 
@@ -172,7 +173,7 @@ async def _bmkg_job_inner():
         log.status = "success"
         log.events_found = events_found
         log.alerts_sent = alerts_sent
-        log.finished_at = datetime.now(timezone.utc)
+        log.finished_at = datetime.now(WIB)
         _safe_commit(db, "bmkg_check: success")
         logger.info(
             "BMKG check done: %d events found, %d alerts sent", events_found, alerts_sent
@@ -181,7 +182,7 @@ async def _bmkg_job_inner():
     except Exception as e:
         log.status = "failed"
         log.error_message = str(e)[:500]
-        log.finished_at = datetime.now(timezone.utc)
+        log.finished_at = datetime.now(WIB)
         _safe_commit(db, "bmkg_check: failed")
         logger.error("BMKG check failed: %s", e)
     finally:
@@ -212,7 +213,7 @@ async def job_check_bmkg():
             if log:
                 log.status = "failed"
                 log.error_message = f"Hard timeout after {BMKG_JOB_TIMEOUT}s"
-                log.finished_at = datetime.now(timezone.utc)
+                log.finished_at = datetime.now(WIB)
                 _safe_commit(db, "bmkg_check: timeout update")
         except Exception as e:
             logger.error("Failed to update timeout log: %s", e)
@@ -235,7 +236,7 @@ async def job_check_bmkg():
             if log:
                 log.status = "failed"
                 log.error_message = f"Unexpected error: {str(e)[:500]}"
-                log.finished_at = datetime.now(timezone.utc)
+                log.finished_at = datetime.now(WIB)
                 _safe_commit(db, "bmkg_check: unexpected error update")
         except Exception:
             pass
@@ -250,7 +251,7 @@ async def _news_job_inner():
     logger.info("Running news check...")
     db = SessionLocal()
     notifier = create_notifier()
-    log = MonitorLog(job_name="news_check", started_at=datetime.now(timezone.utc))
+    log = MonitorLog(job_name="news_check", started_at=datetime.now(WIB))
     db.add(log)
     _safe_commit(db, "news_check: create log")
 
@@ -272,7 +273,7 @@ async def _news_job_inner():
         log.status = "success"
         log.events_found = events_found
         log.alerts_sent = alerts_sent
-        log.finished_at = datetime.now(timezone.utc)
+        log.finished_at = datetime.now(WIB)
         _safe_commit(db, "news_check: success")
         logger.info(
             "News check done: %d events found, %d alerts sent", events_found, alerts_sent
@@ -281,7 +282,7 @@ async def _news_job_inner():
     except Exception as e:
         log.status = "failed"
         log.error_message = str(e)[:500]
-        log.finished_at = datetime.now(timezone.utc)
+        log.finished_at = datetime.now(WIB)
         _safe_commit(db, "news_check: failed")
         logger.error("News check failed: %s", e)
     finally:
@@ -311,7 +312,7 @@ async def job_check_news():
             if log:
                 log.status = "failed"
                 log.error_message = f"Hard timeout after {NEWS_JOB_TIMEOUT}s"
-                log.finished_at = datetime.now(timezone.utc)
+                log.finished_at = datetime.now(WIB)
                 _safe_commit(db, "news_check: timeout update")
         except Exception as e:
             logger.error("Failed to update timeout log: %s", e)
@@ -333,7 +334,7 @@ async def job_check_news():
             if log:
                 log.status = "failed"
                 log.error_message = f"Unexpected error: {str(e)[:500]}"
-                log.finished_at = datetime.now(timezone.utc)
+                log.finished_at = datetime.now(WIB)
                 _safe_commit(db, "news_check: unexpected error update")
         except Exception:
             pass
@@ -350,9 +351,9 @@ async def job_daily_summary():
     notifier = create_notifier()
 
     try:
-        today = datetime.now(timezone.utc).date()
+        today = datetime.now(WIB).date()
         events = db.query(Event).filter(
-            Event.created_at >= datetime(today.year, today.month, today.day, tzinfo=timezone.utc)
+            Event.created_at >= datetime(today.year, today.month, today.day, tzinfo=WIB)
         ).all()
 
         event_dicts = [e.to_dict() for e in events]

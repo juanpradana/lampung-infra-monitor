@@ -1,4 +1,5 @@
 """Aduan/Complaint model — laporan gangguan layanan telekomunikasi."""
+from backend.core.tz import WIB
 from datetime import datetime, timezone
 from sqlalchemy import Column, Integer, String, DateTime, Text, ForeignKey
 from backend.core.database import Base
@@ -71,9 +72,9 @@ class Aduan(Base):
 
     # Timestamps
     created_by = Column(Integer, ForeignKey("users.id"), nullable=True)
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
-    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc),
-                        onupdate=lambda: datetime.now(timezone.utc))
+    created_at = Column(DateTime, default=lambda: datetime.now(WIB))
+    updated_at = Column(DateTime, default=lambda: datetime.now(WIB),
+                        onupdate=lambda: datetime.now(WIB))
     resolved_at = Column(DateTime, nullable=True)
 
     def to_dict(self):
